@@ -12,7 +12,10 @@ import { useAppSelector } from '../store/hooks'
 export function ProfilePage() {
   const email = useAppSelector((s) => s.auth.email)
   const uid = useAppSelector((s) => s.auth.uid)
+  const firebaseConfigured = isFirebaseConfigured()
+  const canLinkSpotify = !firebaseConfigured || uid != null
   const [spotifyOn, setSpotifyOn] = useState(() => readSpotifyTokens() != null)
+  const [spotifyHint, setSpotifyHint] = useState<string | null>(null)
 
   useEffect(() => {
     function sync() {
@@ -61,7 +64,9 @@ export function ProfilePage() {
           <span className="mono">{getSpotifyRedirectUri()}</span>
         </p>
         {!isSpotifyConfigured() ? (
-          <p className="empty-hint">Set VITE_SPOTIFY_CLIENT_ID in .env</p>
+          <p className="empty-hint">
+            Spotify is not configured in this build (missing VITE_SPOTIFY_CLIENT_ID).
+          </p>
         ) : spotifyOn ? (
           <div className="api-status-row">
             <span className="pill active">Connected</span>
@@ -69,6 +74,7 @@ export function ProfilePage() {
               type="button"
               className="btn btn-ghost btn--sm"
               onClick={() => {
+                setSpotifyHint(null)
                 disconnectSpotify()
               }}
             >
@@ -81,29 +87,27 @@ export function ProfilePage() {
             <button
               type="button"
               className="btn btn-secondary btn--sm"
-              onClick={() => beginSpotifyLogin()}
+              onClick={() => {
+                if (!canLinkSpotify) {
+                  setSpotifyHint(
+                    'Primero debes iniciar sesión o registrarte para poder conectar con Spotify.',
+                  )
+                  return
+                }
+                setSpotifyHint(null)
+                beginSpotifyLogin({ showDialog: true })
+              }}
             >
               Connect Spotify
             </button>
           </div>
         )}
-      </section>
-
-      <div className="grid-2">
-        <section className="panel panel--accent-orange">
-          <h2>Discogs</h2>
-          <p className="api-card-desc">
-            Original label and year on dig results and crate rows.
+        {spotifyHint ? (
+          <p className="login-error" role="alert">
+            {spotifyHint}
           </p>
-          <div className="api-status-row">
-            <span className="pill active">Demo connected</span>
-            <span className="mono api-fake-id">token: ••••demo</span>
-          </div>
-          <button type="button" className="btn btn-ghost btn--sm">
-            Manage token
-          </button>
-        </section>
-      </div>
+        ) : null}
+      </section>
 
       <section className="panel panel-spaced panel--accent-pink">
         <h2>Firebase Realtime</h2>

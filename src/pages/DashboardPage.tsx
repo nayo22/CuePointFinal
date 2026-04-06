@@ -152,7 +152,6 @@ export function DashboardPage() {
         <h2>Integrations</h2>
         <div className="chip-row">
           <span className="chip chip--orange">Spotify</span>
-          <span className="chip chip--green">Discogs</span>
           <span className="chip chip--neutral">Firebase Realtime</span>
         </div>
       </section>

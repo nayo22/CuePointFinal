@@ -12,11 +12,7 @@ import {
 } from 'react-router-dom'
 import { setEditor, setSpectator } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
-import {
-  beginSpotifyLogin,
-  isSpotifyConfigured,
-} from '../lib/spotifyAuth'
-import { useAppDispatch } from '../store/hooks'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { flushPendingCuepointSave } from '../store/store'
 
 type Mode = 'login' | 'register'
@@ -126,17 +122,6 @@ export function LoginPage() {
     navigate('/dashboard')
   }
 
-  function connectSpotify() {
-    setError(null)
-    if (!isSpotifyConfigured()) {
-      setError(
-        'Spotify is not configured (missing VITE_SPOTIFY_CLIENT_ID in the build environment).',
-      )
-      return
-    }
-    beginSpotifyLogin()
-  }
-
   return (
     <div className="login-page">
       <div className="login-card-wrap">
@@ -149,8 +134,7 @@ export function LoginPage() {
           </div>
           <p className="sub">
             Setlist Intelligence — build sets, read the mix technically, dig with
-            harmonic context and a Smart Crate. Sign in with email (Firebase) or
-            connect Spotify for real search. Discogs is still a demo.
+            harmonic context and a Smart Crate.
           </p>
 
           {!firebaseOk ? (
@@ -162,8 +146,7 @@ export function LoginPage() {
 
           {spotifyJustConnected ? (
             <p className="login-env-hint mono" role="status">
-              Spotify connected. Sign in with email to use Search and the rest
-              of the app.
+              Spotify connected. Now sign in with email to continue.
             </p>
           ) : null}
 
@@ -245,34 +228,13 @@ export function LoginPage() {
             </button>
           </div>
 
-          <p className="login-divider" role="presentation">
-            <span>or</span>
-          </p>
-
-          <div className="login-oauth-stack">
-            <button
-              type="button"
-              className="btn btn-secondary login-oauth-btn"
-              onClick={connectSpotify}
-            >
-              Continue with Spotify
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary login-oauth-btn"
-              onClick={goEditorDemo}
-            >
-              Continue with Discogs (demo)
-            </button>
-          </div>
-
           <div className="login-actions login-actions--spectator">
             <button
               type="button"
               className="btn btn-ghost"
               onClick={() => void goSpectator()}
             >
-              Continue as spectator
+              Continue as guest
             </button>
           </div>
         </div>

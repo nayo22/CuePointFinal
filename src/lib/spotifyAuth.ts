@@ -7,7 +7,7 @@ import { clearSpotifyTokens, storePkceVerifier } from './spotifyTokens'
 
 const SPOTIFY_SCOPES = ['user-read-email', 'user-read-private'].join(' ')
 
-export function beginSpotifyLogin() {
+export function beginSpotifyLogin(opts?: { showDialog?: boolean }) {
   const clientId = getSpotifyClientId()
   if (!clientId) return
   const verifier = createCodeVerifier()
@@ -21,6 +21,7 @@ export function beginSpotifyLogin() {
       code_challenge_method: 'S256',
       code_challenge: challenge,
     })
+    if (opts?.showDialog) p.set('show_dialog', 'true')
     window.location.assign(
       `https://accounts.spotify.com/authorize?${p.toString()}`,
     )

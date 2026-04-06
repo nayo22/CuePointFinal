@@ -125,10 +125,8 @@ export function SetDetailPage() {
                   />
                 </div>
                 <div>
-                  <h4 className="micro-heading">Discogs</h4>
-                  <p className="discogs-block mono">
-                    {t.label} · {t.year}
-                  </p>
+                  <h4 className="micro-heading">Metadata</h4>
+                  <p className="discogs-block mono">{t.label} · {t.year}</p>
                   <h4 className="micro-heading">Preview</h4>
                   <Preview30sPlayer
                     trackTitle={t.title}

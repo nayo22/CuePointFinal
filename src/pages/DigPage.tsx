@@ -195,9 +195,7 @@ export function DigPage() {
                 energy={t.spotifyEnergy}
                 acousticness={t.acousticness}
               />
-              <p className="discogs-line mono">
-                Label: {t.label} ({t.year})
-              </p>
+              <p className="discogs-line mono">Meta: {t.label} ({t.year})</p>
               <Preview30sPlayer
                 trackTitle={t.title}
                 previewUrl={t.previewUrl}

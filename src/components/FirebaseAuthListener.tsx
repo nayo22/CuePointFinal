@@ -9,6 +9,7 @@ import {
 import { replaceCrateIds } from '../features/crate/crateSlice'
 import { replaceDraftTracks } from '../features/draft/draftSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
+import { clearSpotifyTokensForFirebaseUid } from '../lib/spotifyTokens'
 import { subscribeUserCuepoint } from '../services/userCuepointFirestore'
 import { useAppDispatch } from '../store/hooks'
 import { store } from '../store/store'
@@ -32,6 +33,8 @@ export function FirebaseAuthListener() {
       firestoreUnsub.current?.()
       firestoreUnsub.current = null
       if (!user) {
+        const previousUid = store.getState().auth.uid
+        if (previousUid) clearSpotifyTokensForFirebaseUid(previousUid)
         dispatch(clearFirebaseUser())
         return
       }

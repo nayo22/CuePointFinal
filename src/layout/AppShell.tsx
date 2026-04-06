@@ -5,7 +5,7 @@ import { GlobalSearchBar } from '../components/GlobalSearchBar'
 import { NotificationBell } from '../components/NotificationBell'
 import { setEditor } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
-import { disconnectSpotify } from '../lib/spotifyAuth'
+import { clearSpotifyTokensForFirebaseUid } from '../lib/spotifyTokens'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { flushPendingCuepointSave } from '../store/store'
 
@@ -25,13 +25,14 @@ export function AppShell() {
   const uid = useAppSelector((s) => s.auth.uid)
 
   async function handleSignOut() {
+    const signingOutUid = uid
     if (isFirebaseConfigured() && uid) {
       await flushPendingCuepointSave()
       await signOut(getAuth(getFirebaseApp()))
     } else if (role === 'spectator') {
       dispatch(setEditor())
     }
-    disconnectSpotify()
+    clearSpotifyTokensForFirebaseUid(signingOutUid ?? undefined)
     navigate('/login')
   }
 

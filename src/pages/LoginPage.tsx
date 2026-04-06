@@ -16,7 +16,11 @@ import { AuthScreenFrame } from '../components/AuthScreenFrame'
 import { PasswordFieldWithToggle } from '../components/PasswordFieldWithToggle'
 import { setEditor, setSpectator } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
-import { disconnectSpotify } from '../lib/spotifyAuth'
+import {
+  clearSpotifyTokensForFirebaseUid,
+  promotePendingSpotifyTokens,
+  scrubLegacySpotifyKeys,
+} from '../lib/spotifyTokens'
 import { saveUserProfileFields } from '../services/userCuepointFirestore'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { flushPendingCuepointSave } from '../store/store'
@@ -115,6 +119,7 @@ export function LoginPage() {
     }
     setBusy(true)
     try {
+      scrubLegacySpotifyKeys()
       const auth = getAuth(getFirebaseApp())
       if (mode === 'register') {
         const cred = await createUserWithEmailAndPassword(
@@ -123,8 +128,11 @@ export function LoginPage() {
           password,
         )
         await persistDjProfile(cred.user, trimmedUser)
+        promotePendingSpotifyTokens(cred.user.uid)
       } else {
         await signInWithEmailAndPassword(auth, trimmedEmail, password)
+        const u = auth.currentUser
+        if (u) promotePendingSpotifyTokens(u.uid)
       }
       dispatch(setEditor())
       navigate(postAuthDestination())
@@ -141,14 +149,16 @@ export function LoginPage() {
 
   async function goSpectator() {
     setError(null)
+    let preUid: string | undefined
     if (backendOk) {
       const auth = getAuth(getFirebaseApp())
+      preUid = auth.currentUser?.uid ?? undefined
       if (auth.currentUser) {
         await flushPendingCuepointSave()
         await signOut(auth)
       }
     }
-    disconnectSpotify()
+    clearSpotifyTokensForFirebaseUid(preUid)
     dispatch(setSpectator())
     navigate('/dashboard')
   }

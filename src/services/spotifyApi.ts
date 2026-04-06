@@ -1,11 +1,16 @@
+import { getAuth } from 'firebase/auth'
+import { getFirebaseApp } from '../lib/firebase'
 import { getSpotifyClientId, getSpotifyRedirectUri } from '../lib/spotifyConfig'
 import type { Energy, Track } from '../types/models'
 import {
   clearPkceVerifier,
   clearSpotifyTokens,
   peekPkceVerifier,
+  readPendingSpotifyTokens,
   readSpotifyTokens,
+  readSpotifyTokensForFirebaseUid,
   writeSpotifyTokens,
+  writeSpotifyTokensForSession,
   type SpotifyStoredTokens,
 } from '../lib/spotifyTokens'
 
@@ -89,7 +94,10 @@ export async function exchangeAuthorizationCode(code: string): Promise<void> {
     clearPkceVerifier()
     throw new Error('Spotify no devolvió un token. Intenta de nuevo.')
   }
-  const prev = readSpotifyTokens()
+  const firebaseUid = getAuth(getFirebaseApp()).currentUser?.uid ?? null
+  const prev = firebaseUid
+    ? readSpotifyTokensForFirebaseUid(firebaseUid)
+    : readPendingSpotifyTokens()
   const refresh =
     typeof data.refresh_token === 'string' && data.refresh_token.length > 0
       ? data.refresh_token
@@ -98,7 +106,7 @@ export async function exchangeAuthorizationCode(code: string): Promise<void> {
     clearPkceVerifier()
     throw new Error('Spotify no devolvió sesión renovable. Intenta de nuevo.')
   }
-  writeSpotifyTokens({
+  writeSpotifyTokensForSession(firebaseUid, {
     access_token: data.access_token,
     refresh_token: refresh,
     expires_at_ms: Date.now() + data.expires_in * 1000 - 60_000,

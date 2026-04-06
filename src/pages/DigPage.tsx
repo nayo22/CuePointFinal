@@ -128,15 +128,14 @@ export function DigPage() {
         ) : null}
         {!spotifyLive && isSpotifyConfigured() ? (
           <p className="mono search-query-line">
-            Connect Spotify from Login or Profile to search the real catalog.
+            Conecta Spotify en Perfil para buscar en el catálogo completo.
           </p>
         ) : null}
         {!isSpotifyConfigured() && q.trim() && !searching && !searchError ? (
-          <p className="mono search-query-line" role="status">
-            Spotify no está configurado en este servidor. Quien despliega la app
-            debe definir <span className="mono">VITE_SPOTIFY_CLIENT_ID</span> en
-            Vercel (Environment Variables) y volver a desplegar; sin eso solo hay
-            canciones de demostración y búsquedas como esta suelen quedar vacías.
+          <p className="search-query-line" role="status">
+            La búsqueda en catálogo no está activa en esta versión. Si administras
+            el sitio, revisa la configuración del despliegue; si no, avísale a
+            quien lo mantiene.
           </p>
         ) : null}
         {searching && q.trim() ? (

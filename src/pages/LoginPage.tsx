@@ -3,6 +3,8 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   signOut,
+  updateProfile,
+  type User,
 } from 'firebase/auth'
 import { useEffect, useState } from 'react'
 import {
@@ -12,6 +14,7 @@ import {
 } from 'react-router-dom'
 import { setEditor, setSpectator } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
+import { saveUserProfileFields } from '../services/userCuepointFirestore'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { flushPendingCuepointSave } from '../store/store'
 
@@ -19,12 +22,15 @@ type Mode = 'login' | 'register'
 
 function authMessage(code: string): string {
   if (code === 'auth/invalid-credential' || code === 'auth/wrong-password')
-    return 'Email or password is wrong.'
-  if (code === 'auth/email-already-in-use') return 'That email is already registered.'
-  if (code === 'auth/invalid-email') return 'That email is not valid.'
-  if (code === 'auth/weak-password') return 'Use a stronger password (6+ characters).'
-  if (code === 'auth/too-many-requests') return 'Too many attempts. Try again later.'
-  return 'Something went wrong. Try again.'
+    return 'Correo o contraseña incorrectos.'
+  if (code === 'auth/email-already-in-use')
+    return 'Ese correo ya está registrado.'
+  if (code === 'auth/invalid-email') return 'Ese correo no es válido.'
+  if (code === 'auth/weak-password')
+    return 'Usa una contraseña más segura (6+ caracteres).'
+  if (code === 'auth/too-many-requests')
+    return 'Demasiados intentos. Prueba más tarde.'
+  return 'Algo salió mal. Inténtalo de nuevo.'
 }
 
 type LocationState = {
@@ -42,49 +48,66 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [djName, setDjName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const firebaseOk = isFirebaseConfigured()
+  const backendOk = isFirebaseConfigured()
   const spotifyJustConnected = searchParams.get('spotify') === 'connected'
 
   useEffect(() => {
-    if (!firebaseOk || !authReady || !uid) return
+    if (!backendOk || !authReady || !uid) return
     const from = (location.state as LocationState | null)?.from
     const dest = from
       ? `${from.pathname}${from.search ?? ''}`
       : '/dashboard'
     navigate(dest, { replace: true })
-  }, [authReady, firebaseOk, location.state, navigate, uid])
+  }, [authReady, backendOk, location.state, navigate, uid])
 
   function postAuthDestination(): string {
     const from = (location.state as LocationState | null)?.from
     return from ? `${from.pathname}${from.search ?? ''}` : '/dashboard'
   }
 
+  async function persistDjProfile(user: User, name: string) {
+    const trimmed = name.trim()
+    if (trimmed) {
+      await updateProfile(user, { displayName: trimmed })
+      await saveUserProfileFields(user.uid, { displayName: trimmed })
+    }
+  }
+
   async function submitEmail() {
     setError(null)
     const trimmed = email.trim()
     if (!trimmed || !password) {
-      setError('Email and password are required.')
+      setError('Correo y contraseña son obligatorios.')
       return
     }
     if (mode === 'register' && password !== confirm) {
-      setError('Passwords do not match.')
+      setError('Las contraseñas no coinciden.')
       return
     }
-    if (!firebaseOk) {
-      dispatch(setEditor())
-      navigate('/dashboard')
+    if (!backendOk) {
+      setError(
+        'El servicio de cuentas no está disponible en este momento. Vuelve más tarde.',
+      )
       return
     }
     setBusy(true)
     try {
       const auth = getAuth(getFirebaseApp())
       if (mode === 'register') {
-        await createUserWithEmailAndPassword(auth, trimmed, password)
+        const cred = await createUserWithEmailAndPassword(
+          auth,
+          trimmed,
+          password,
+        )
+        await persistDjProfile(cred.user, djName)
       } else {
         await signInWithEmailAndPassword(auth, trimmed, password)
+        const u = auth.currentUser
+        if (u && djName.trim()) await persistDjProfile(u, djName)
       }
       dispatch(setEditor())
       navigate(postAuthDestination())
@@ -101,7 +124,7 @@ export function LoginPage() {
 
   async function goSpectator() {
     setError(null)
-    if (firebaseOk) {
+    if (backendOk) {
       const auth = getAuth(getFirebaseApp())
       if (auth.currentUser) {
         await flushPendingCuepointSave()
@@ -109,16 +132,6 @@ export function LoginPage() {
       }
     }
     dispatch(setSpectator())
-    navigate('/dashboard')
-  }
-
-  function goEditorDemo() {
-    setError(null)
-    if (firebaseOk) {
-      dispatch(setSpectator())
-    } else {
-      dispatch(setEditor())
-    }
     navigate('/dashboard')
   }
 
@@ -133,24 +146,17 @@ export function LoginPage() {
             </h1>
           </div>
           <p className="sub">
-            Setlist Intelligence — build sets, read the mix technically, dig with
-            harmonic context and a Smart Crate.
+            Arma tus sets con criterio: energía, armonía y un crate inteligente.
+            Busca música, explora y comparte con otros DJs.
           </p>
 
-          {!firebaseOk ? (
-            <p className="login-env-hint mono">
-              Firebase env vars missing — local-only mode until you configure
-              VITE_FIREBASE_* in the environment.
-            </p>
-          ) : null}
-
           {spotifyJustConnected ? (
-            <p className="login-env-hint mono" role="status">
-              Spotify connected. Now sign in with email to continue.
+            <p className="login-env-hint" role="status">
+              Spotify listo. Inicia sesión con tu correo para entrar a la app.
             </p>
           ) : null}
 
-          <div className="login-mode-tabs" role="tablist" aria-label="Account mode">
+          <div className="login-mode-tabs" role="tablist" aria-label="Modo de cuenta">
             <button
               type="button"
               role="tab"
@@ -158,7 +164,7 @@ export function LoginPage() {
               className={`login-mode-tab ${mode === 'login' ? 'login-mode-tab--active' : ''}`}
               onClick={() => setMode('login')}
             >
-              Log in
+              Iniciar sesión
             </button>
             <button
               type="button"
@@ -167,12 +173,25 @@ export function LoginPage() {
               className={`login-mode-tab ${mode === 'register' ? 'login-mode-tab--active' : ''}`}
               onClick={() => setMode('register')}
             >
-              Register
+              Registrarse
             </button>
           </div>
 
           <div className="field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="dj-display-name">Nombre de DJ (opcional)</label>
+            <input
+              id="dj-display-name"
+              name="djName"
+              type="text"
+              autoComplete="nickname"
+              placeholder="Cómo quieres que te vean otros"
+              value={djName}
+              onChange={(e) => setDjName(e.target.value)}
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="email">Correo</label>
             <input
               id="email"
               name="email"
@@ -183,7 +202,7 @@ export function LoginPage() {
             />
           </div>
           <div className="field">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Contraseña</label>
             <input
               id="password"
               name="password"
@@ -195,7 +214,7 @@ export function LoginPage() {
           </div>
           {mode === 'register' ? (
             <div className="field">
-              <label htmlFor="password-confirm">Confirm password</label>
+              <label htmlFor="password-confirm">Confirmar contraseña</label>
               <input
                 id="password-confirm"
                 name="password-confirm"
@@ -221,10 +240,10 @@ export function LoginPage() {
               onClick={() => void submitEmail()}
             >
               {busy
-                ? 'Please wait…'
+                ? 'Espera…'
                 : mode === 'login'
-                  ? 'Log in'
-                  : 'Create account'}
+                  ? 'Iniciar sesión'
+                  : 'Crear cuenta'}
             </button>
           </div>
 
@@ -234,7 +253,7 @@ export function LoginPage() {
               className="btn btn-ghost"
               onClick={() => void goSpectator()}
             >
-              Continue as guest
+              Continuar como invitado
             </button>
           </div>
         </div>

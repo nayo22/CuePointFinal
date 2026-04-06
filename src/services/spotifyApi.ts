@@ -10,9 +10,12 @@ import {
 
 export async function exchangeAuthorizationCode(code: string): Promise<void> {
   const verifier = takePkceVerifier()
-  if (!verifier) throw new Error('PKCE session expired. Try connecting again.')
+  if (!verifier)
+    throw new Error(
+      'La sesión de conexión con Spotify expiró. Vuelve a intentarlo desde Perfil.',
+    )
   const clientId = getSpotifyClientId()
-  if (!clientId) throw new Error('Spotify client id is not set.')
+  if (!clientId) throw new Error('Spotify no está configurado en esta versión.')
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
     code,

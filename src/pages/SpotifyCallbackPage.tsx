@@ -17,10 +17,10 @@ export function SpotifyCallbackPage() {
         <div className="login-card-wrap">
           <div className="login-card">
             <p className="sub" role="alert">
-              Spotify: {err}
+              Spotify no completó la conexión ({err}).
             </p>
             <p className="muted-link-block">
-              <Link to="/login">Back to login</Link>
+              <Link to="/login">Volver al inicio de sesión</Link>
             </p>
           </div>
         </div>
@@ -33,9 +33,9 @@ export function SpotifyCallbackPage() {
       <div className="login-page">
         <div className="login-card-wrap">
           <div className="login-card">
-            <p className="sub">Missing authorization code.</p>
+            <p className="sub">Falta el código de autorización.</p>
             <p className="muted-link-block">
-              <Link to="/login">Back to login</Link>
+              <Link to="/login">Volver al inicio de sesión</Link>
             </p>
           </div>
         </div>
@@ -49,7 +49,7 @@ export function SpotifyCallbackPage() {
 function SpotifyCallbackInner({ code }: { code: string }) {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const [message, setMessage] = useState('Connecting to Spotify…')
+  const [message, setMessage] = useState('Conectando con Spotify…')
 
   useEffect(() => {
     let cancelled = false
@@ -68,7 +68,9 @@ function SpotifyCallbackInner({ code }: { code: string }) {
       })
       .catch((e: unknown) => {
         if (!cancelled) {
-          setMessage(e instanceof Error ? e.message : 'Could not connect.')
+          setMessage(
+            e instanceof Error ? e.message : 'No se pudo conectar. Intenta de nuevo.',
+          )
         }
       })
     return () => {
@@ -82,7 +84,7 @@ function SpotifyCallbackInner({ code }: { code: string }) {
         <div className="login-card">
           <p className="sub">{message}</p>
           <p className="muted-link-block">
-            <Link to="/login">Back to login</Link>
+            <Link to="/login">Volver al inicio de sesión</Link>
           </p>
         </div>
       </div>

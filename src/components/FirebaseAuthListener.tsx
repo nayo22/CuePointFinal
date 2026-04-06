@@ -4,6 +4,7 @@ import {
   clearFirebaseUser,
   setAuthReady,
   setFirebaseUser,
+  setUserProfile,
 } from '../features/auth/authSlice'
 import { replaceCrateIds } from '../features/crate/crateSlice'
 import { replaceDraftTracks } from '../features/draft/draftSlice'
@@ -35,6 +36,12 @@ export function FirebaseAuthListener() {
         return
       }
       dispatch(setFirebaseUser({ uid: user.uid, email: user.email }))
+      dispatch(
+        setUserProfile({
+          displayName: user.displayName ?? null,
+          photoUrl: user.photoURL ?? null,
+        }),
+      )
       firestoreUnsub.current = subscribeUserCuepoint(
         user.uid,
         () => ({
@@ -42,8 +49,22 @@ export function FirebaseAuthListener() {
           tracks: store.getState().draft.tracks,
         }),
         (data) => {
-          dispatch(replaceCrateIds(data.crateIds))
-          dispatch(replaceDraftTracks(data.draftTracks))
+          dispatch(
+            setUserProfile({
+              displayName: data.displayName ?? null,
+              photoUrl: data.photoUrl ?? null,
+            }),
+          )
+          const local = store.getState()
+          const ids = local.crate.ids
+          const tracks = local.draft.tracks
+          if (
+            JSON.stringify(data.crateIds) !== JSON.stringify(ids) ||
+            JSON.stringify(data.draftTracks) !== JSON.stringify(tracks)
+          ) {
+            dispatch(replaceCrateIds(data.crateIds))
+            dispatch(replaceDraftTracks(data.draftTracks))
+          }
         },
       )
     })

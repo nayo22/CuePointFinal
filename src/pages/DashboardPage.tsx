@@ -149,10 +149,13 @@ export function DashboardPage() {
       </div>
 
       <section className="panel panel-spaced">
-        <h2>Integrations</h2>
+        <h2>Conexiones</h2>
+        <p className="api-card-desc">
+          Vincula Spotify desde Perfil para buscar música y ver datos útiles en
+          tus sesiones.
+        </p>
         <div className="chip-row">
           <span className="chip chip--orange">Spotify</span>
-          <span className="chip chip--neutral">Firebase Realtime</span>
         </div>
       </section>
     </>

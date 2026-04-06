@@ -7,7 +7,7 @@ function AuthBootScreen() {
     <div className="login-page">
       <div className="login-card-wrap">
         <p className="sub" role="status">
-          Loading session…
+          Cargando sesión…
         </p>
       </div>
     </div>

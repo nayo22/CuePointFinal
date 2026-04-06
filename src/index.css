@@ -1843,6 +1843,143 @@ table.data a:hover {
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
+.profile-hero {
+  margin-bottom: 1rem;
+}
+
+.profile-hero-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.profile-avatar-wrap {
+  flex-shrink: 0;
+}
+
+.profile-avatar-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+.profile-avatar-fallback {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--orange), var(--accent));
+  color: #0a0a0c;
+}
+
+.profile-hero-text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.profile-display-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+}
+
+.profile-email-line {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.profile-guest-hint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  max-width: 36rem;
+}
+
+.profile-guest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.profile-edit-block {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.profile-edit-heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.profile-saved-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.profile-spotify-card .profile-spotify-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.profile-spotify-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+}
+
+.profile-spotify-desc {
+  margin: 0;
+}
+
+.profile-guest-dialog {
+  max-width: 420px;
+  width: calc(100% - 2rem);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+}
+
+.profile-guest-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.profile-guest-dialog-inner {
+  padding: 1.25rem 1.35rem;
+}
+
+.profile-guest-dialog-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.profile-guest-dialog-text {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.profile-guest-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

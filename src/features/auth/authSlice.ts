@@ -3,11 +3,13 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 export type DjRole = 'editor' | 'spectator'
 
 type AuthState = {
-  /** True after first Firebase auth resolution (or immediately if Firebase is off). */
+  /** True after first auth resolution (or immediately if backend is off). */
   authReady: boolean
   role: DjRole
   uid: string | null
   email: string | null
+  displayName: string | null
+  photoUrl: string | null
 }
 
 const initialState: AuthState = {
@@ -15,6 +17,8 @@ const initialState: AuthState = {
   role: 'editor',
   uid: null,
   email: null,
+  displayName: null,
+  photoUrl: null,
 }
 
 const authSlice = createSlice({
@@ -50,6 +54,7 @@ export const {
   setEditor,
   setSpectator,
   setFirebaseUser,
+  setUserProfile,
   clearFirebaseUser,
 } = authSlice.actions
 export default authSlice.reducer

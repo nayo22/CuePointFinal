@@ -5,6 +5,7 @@ import { GlobalSearchBar } from '../components/GlobalSearchBar'
 import { NotificationBell } from '../components/NotificationBell'
 import { setEditor } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
+import { disconnectSpotify } from '../lib/spotifyAuth'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { flushPendingCuepointSave } from '../store/store'
 
@@ -30,6 +31,7 @@ export function AppShell() {
     } else if (role === 'spectator') {
       dispatch(setEditor())
     }
+    disconnectSpotify()
     navigate('/login')
   }
 

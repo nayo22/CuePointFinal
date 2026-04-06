@@ -16,6 +16,7 @@ import { AuthScreenFrame } from '../components/AuthScreenFrame'
 import { PasswordFieldWithToggle } from '../components/PasswordFieldWithToggle'
 import { setEditor, setSpectator } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
+import { disconnectSpotify } from '../lib/spotifyAuth'
 import { saveUserProfileFields } from '../services/userCuepointFirestore'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { flushPendingCuepointSave } from '../store/store'
@@ -142,6 +143,7 @@ export function LoginPage() {
         await signOut(auth)
       }
     }
+    disconnectSpotify()
     dispatch(setSpectator())
     navigate('/dashboard')
   }

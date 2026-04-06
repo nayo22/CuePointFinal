@@ -20,17 +20,19 @@ export function DigPage() {
   const dispatch = useAppDispatch()
   const crateIds = useAppSelector((s) => s.crate.ids)
   const draftTracks = useAppSelector((s) => s.draft.tracks)
+  const isGuest =
+    useAppSelector((s) => s.auth.role === 'spectator' || s.auth.uid == null)
 
   const [results, setResults] = useState<Track[]>([])
   const [searchError, setSearchError] = useState<string | null>(null)
   const [searching, setSearching] = useState(false)
-  const [spotifyLive, setSpotifyLive] = useState(
-    () => isSpotifyConfigured() && readSpotifyTokens() != null,
-  )
+  const [, setSpotifyAuthTick] = useState(0)
+  const spotifyLive =
+    !isGuest && isSpotifyConfigured() && readSpotifyTokens() != null
 
   useEffect(() => {
     function sync() {
-      setSpotifyLive(isSpotifyConfigured() && readSpotifyTokens() != null)
+      setSpotifyAuthTick((n) => n + 1)
     }
     window.addEventListener('cuepoint-spotify-auth', sync)
     return () => window.removeEventListener('cuepoint-spotify-auth', sync)

@@ -22,10 +22,11 @@ export function ProfilePage() {
   const backendOk = isFirebaseConfigured()
   const canLinkSpotify = backendOk && uid != null
 
-  const [spotifyOn, setSpotifyOn] = useState(() => readSpotifyTokens() != null)
+  const [, setSpotifyAuthTick] = useState(0)
   const [spotifyConfigError, setSpotifyConfigError] = useState<string | null>(
     null,
   )
+  const spotifyOn = !isGuest && readSpotifyTokens() != null
   const [editName, setEditName] = useState(displayName ?? '')
   const [pickedFile, setPickedFile] = useState<File | null>(null)
   const [objectPreview, setObjectPreview] = useState<string | null>(null)
@@ -51,7 +52,7 @@ export function ProfilePage() {
 
   useEffect(() => {
     function sync() {
-      setSpotifyOn(readSpotifyTokens() != null)
+      setSpotifyAuthTick((n) => n + 1)
     }
     window.addEventListener('cuepoint-spotify-auth', sync)
     return () => window.removeEventListener('cuepoint-spotify-auth', sync)

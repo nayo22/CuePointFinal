@@ -14,7 +14,6 @@ function AuthBootScreen() {
   )
 }
 
-/** `/` → login or dashboard */
 export function RootRedirect() {
   const { authReady, uid, role } = useAppSelector((s) => s.auth)
 
@@ -24,14 +23,17 @@ export function RootRedirect() {
     return <Navigate to="/login" replace />
   }
 
-  if (uid != null || role === 'spectator') {
+  if (uid != null) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  if (role === 'spectator') {
     return <Navigate to="/dashboard" replace />
   }
 
   return <Navigate to="/login" replace />
 }
 
-/** Firebase session or spectator mode required for the main app shell. */
 export function RequireSession() {
   const { authReady, uid, role } = useAppSelector((s) => s.auth)
   const location = useLocation()

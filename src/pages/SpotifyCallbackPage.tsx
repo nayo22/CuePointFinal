@@ -12,12 +12,16 @@ export function SpotifyCallbackPage() {
   const code = params.get('code')
 
   if (err) {
+    const friendly =
+      err === 'access_denied'
+        ? 'No autorizaste la conexión. Puedes intentarlo de nuevo cuando quieras.'
+        : 'No se pudo completar la conexión. Vuelve a intentarlo desde Perfil.'
     return (
       <div className="login-page">
         <div className="login-card-wrap">
           <div className="login-card">
             <p className="sub" role="alert">
-              Spotify no completó la conexión ({err}).
+              {friendly}
             </p>
             <p className="muted-link-block">
               <Link to="/login">Volver al inicio de sesión</Link>
@@ -69,7 +73,9 @@ function SpotifyCallbackInner({ code }: { code: string }) {
       .catch((e: unknown) => {
         if (!cancelled) {
           setMessage(
-            e instanceof Error ? e.message : 'No se pudo conectar. Intenta de nuevo.',
+            e instanceof Error
+              ? e.message
+              : 'No se pudo conectar. Intenta de nuevo desde Perfil.',
           )
         }
       })

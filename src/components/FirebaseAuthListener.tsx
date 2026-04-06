@@ -49,10 +49,17 @@ export function FirebaseAuthListener() {
           tracks: store.getState().draft.tracks,
         }),
         (data) => {
+          const prev = store.getState().auth
           dispatch(
             setUserProfile({
-              displayName: data.displayName ?? null,
-              photoUrl: data.photoUrl ?? null,
+              displayName:
+                typeof data.displayName === 'string'
+                  ? data.displayName
+                  : prev.displayName,
+              photoUrl:
+                typeof data.photoUrl === 'string'
+                  ? data.photoUrl
+                  : prev.photoUrl,
             }),
           )
           const local = store.getState()

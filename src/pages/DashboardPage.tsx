@@ -51,8 +51,8 @@ export function DashboardPage() {
   return (
     <>
       <p className="mission-tagline">
-        Setlist Intelligence — technical progression, community feedback, and smart
-        digging. Not just a track list.
+        Arma sets con criterio: energía, armonía y un crate que te acompaña.
+        Explora lo que hace la comunidad y mejora cada sesión.
       </p>
 
       <div className="chip-row page-chips-bar" aria-label="Quick stats">
@@ -77,7 +77,7 @@ export function DashboardPage() {
         </section>
 
         <section className="panel panel--accent-orange" aria-labelledby="dash-notif">
-          <h2 id="dash-notif">Realtime inbox</h2>
+          <h2 id="dash-notif">Bandeja</h2>
           <p className="mono dash-mini-hint">Crate saves and comments</p>
           <ul className="dash-notif-list">
             {notifications.map((n) => (
@@ -134,10 +134,10 @@ export function DashboardPage() {
         </section>
 
         <section className="panel panel--accent-green">
-          <h2>Harmonic matcher</h2>
+          <h2>Mezcla armónica</h2>
           <p className="api-card-desc">
-            The anchor is the last track in your draft. Compatible key and BPM rows
-            highlight in Explore.
+            El ancla es el último tema de tu borrador. En Explorar verás qué
+            filas encajan en tonalidad y ritmo.
           </p>
           <p className="anchor-line dash-anchor">
             Anchor: {anchor?.artist} — {anchor?.key} @ {anchor?.bpm} BPM
@@ -149,10 +149,10 @@ export function DashboardPage() {
       </div>
 
       <section className="panel panel-spaced">
-        <h2>Conexiones</h2>
+        <h2>Tu música</h2>
         <p className="api-card-desc">
-          Vincula Spotify desde Perfil para buscar música y ver datos útiles en
-          tus sesiones.
+          Desde Perfil puedes vincular tu cuenta de streaming para buscar temas y
+          ver más detalle al armar sets.
         </p>
         <div className="chip-row">
           <span className="chip chip--orange">Spotify</span>

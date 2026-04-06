@@ -40,20 +40,29 @@ type LocationState = {
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const dispatch = useAppDispatch()
   const authReady = useAppSelector((s) => s.auth.authReady)
   const uid = useAppSelector((s) => s.auth.uid)
-  const [mode, setMode] = useState<Mode>('login')
+  const urlMode = searchParams.get('mode')
+  const [mode, setMode] = useState<Mode>(
+    urlMode === 'register' ? 'register' : 'login',
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [djName, setDjName] = useState('')
+  const [photoUrlField, setPhotoUrlField] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   const backendOk = isFirebaseConfigured()
   const spotifyJustConnected = searchParams.get('spotify') === 'connected'
+
+  useEffect(() => {
+    if (urlMode === 'register') setMode('register')
+    if (urlMode === 'login') setMode('login')
+  }, [urlMode])
 
   useEffect(() => {
     if (!backendOk || !authReady || !uid) return
@@ -69,11 +78,22 @@ export function LoginPage() {
     return from ? `${from.pathname}${from.search ?? ''}` : '/dashboard'
   }
 
-  async function persistDjProfile(user: User, name: string) {
-    const trimmed = name.trim()
-    if (trimmed) {
-      await updateProfile(user, { displayName: trimmed })
-      await saveUserProfileFields(user.uid, { displayName: trimmed })
+  async function persistDjProfile(
+    user: User,
+    name: string,
+    photoUrl?: string,
+  ) {
+    const trimmedName = name.trim()
+    const trimmedPhoto = photoUrl?.trim() ?? ''
+    const profile: { displayName?: string; photoURL?: string } = {}
+    if (trimmedName) profile.displayName = trimmedName
+    if (trimmedPhoto) profile.photoURL = trimmedPhoto
+    if (Object.keys(profile).length > 0) {
+      await updateProfile(user, profile)
+      await saveUserProfileFields(user.uid, {
+        displayName: trimmedName || undefined,
+        photoUrl: trimmedPhoto || undefined,
+      })
     }
   }
 
@@ -103,7 +123,7 @@ export function LoginPage() {
           trimmed,
           password,
         )
-        await persistDjProfile(cred.user, djName)
+        await persistDjProfile(cred.user, djName, photoUrlField)
       } else {
         await signInWithEmailAndPassword(auth, trimmed, password)
         const u = auth.currentUser
@@ -152,7 +172,8 @@ export function LoginPage() {
 
           {spotifyJustConnected ? (
             <p className="login-env-hint" role="status">
-              Spotify listo. Inicia sesión con tu correo para entrar a la app.
+              Cuenta de música vinculada. Entra con tu correo y contraseña para
+              continuar.
             </p>
           ) : null}
 
@@ -162,7 +183,17 @@ export function LoginPage() {
               role="tab"
               aria-selected={mode === 'login'}
               className={`login-mode-tab ${mode === 'login' ? 'login-mode-tab--active' : ''}`}
-              onClick={() => setMode('login')}
+              onClick={() => {
+                setMode('login')
+                setSearchParams(
+                  (prev) => {
+                    const next = new URLSearchParams(prev)
+                    next.delete('mode')
+                    return next
+                  },
+                  { replace: true },
+                )
+              }}
             >
               Iniciar sesión
             </button>
@@ -171,24 +202,53 @@ export function LoginPage() {
               role="tab"
               aria-selected={mode === 'register'}
               className={`login-mode-tab ${mode === 'register' ? 'login-mode-tab--active' : ''}`}
-              onClick={() => setMode('register')}
+              onClick={() => {
+                setMode('register')
+                setSearchParams(
+                  (prev) => {
+                    const next = new URLSearchParams(prev)
+                    next.set('mode', 'register')
+                    return next
+                  },
+                  { replace: true },
+                )
+              }}
             >
               Registrarse
             </button>
           </div>
 
           <div className="field">
-            <label htmlFor="dj-display-name">Nombre de DJ (opcional)</label>
+            <label htmlFor="dj-display-name">
+              Nombre de usuario (opcional)
+            </label>
             <input
               id="dj-display-name"
               name="djName"
               type="text"
               autoComplete="nickname"
-              placeholder="Cómo quieres que te vean otros"
+              placeholder="Cómo quieres que te vean en la app"
               value={djName}
               onChange={(e) => setDjName(e.target.value)}
             />
           </div>
+
+          {mode === 'register' ? (
+            <div className="field">
+              <label htmlFor="register-photo-url">
+                Foto de perfil — enlace (opcional)
+              </label>
+              <input
+                id="register-photo-url"
+                name="photoUrl"
+                type="url"
+                autoComplete="off"
+                placeholder="https://…"
+                value={photoUrlField}
+                onChange={(e) => setPhotoUrlField(e.target.value)}
+              />
+            </div>
+          ) : null}
 
           <div className="field">
             <label htmlFor="email">Correo</label>

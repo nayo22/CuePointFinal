@@ -21,17 +21,19 @@ export function CratePage() {
     <>
       <div className="chip-row page-chips-bar">
         <span className="chip chip--orange">{saved.length} saved</span>
-        <span className="chip chip--green">Synced to this browser</span>
+        <span className="chip chip--green">En este dispositivo</span>
       </div>
 
       <div className="panel panel--accent-orange">
         <h2>Smart Crate</h2>
         <p className="api-card-desc crate-intro">
-          Saved tracks from Search and sets. Other DJs who saved the same titles
-          show up in the last column.
+          Temas que guardaste desde Búsqueda y los sets. En la última columna ves
+          si otros DJs también los tienen en su crate.
         </p>
         {saved.length === 0 ? (
-          <p className="empty-hint">Crate is empty — add from Search or a set.</p>
+          <p className="empty-hint">
+            Tu crate está vacío — añade temas desde Búsqueda o un set.
+          </p>
         ) : (
           <div className="table-wrap">
             <table className="data crate-table">

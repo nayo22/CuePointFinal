@@ -1,4 +1,3 @@
-/** Spotify brand mark (green circle + sound-wave arcs). */
 export function SpotifyLogoMark({ size = 40 }: { size?: number }) {
   return (
     <svg

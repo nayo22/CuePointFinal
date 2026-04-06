@@ -1503,7 +1503,7 @@ a.btn:hover {
   box-shadow: 0 0 0 1px rgba(0, 255, 156, 0.12);
 }
 
-.discogs-line {
+.track-meta-line {
   margin: 0.5rem 0 0;
   font-size: 0.72rem;
   color: var(--text-muted);
@@ -1770,7 +1770,7 @@ a.btn:hover {
   font-size: 0.85rem;
 }
 
-.discogs-block {
+.track-meta-block {
   margin: 0 0 0.65rem;
   font-size: 0.8rem;
 }

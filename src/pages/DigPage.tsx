@@ -39,8 +39,12 @@ export function DigPage() {
   useEffect(() => {
     let cancelled = false
     const hasQuery = q.trim().length > 0
-    if (hasQuery) setSearching(true)
-    else setSearching(false)
+    void Promise.resolve().then(() => {
+      if (!cancelled) {
+        if (hasQuery) setSearching(true)
+        else setSearching(false)
+      }
+    })
 
     searchDigTracks(q)
       .then((list) => {
@@ -133,9 +137,8 @@ export function DigPage() {
         ) : null}
         {!isSpotifyConfigured() && q.trim() && !searching && !searchError ? (
           <p className="search-query-line" role="status">
-            La búsqueda en catálogo no está activa en esta versión. Si administras
-            el sitio, revisa la configuración del despliegue; si no, avísale a
-            quien lo mantiene.
+            La búsqueda ampliada no está disponible ahora; sigues viendo
+            sugerencias de la app.
           </p>
         ) : null}
         {searching && q.trim() ? (
@@ -194,7 +197,9 @@ export function DigPage() {
                 energy={t.spotifyEnergy}
                 acousticness={t.acousticness}
               />
-              <p className="discogs-line mono">Meta: {t.label} ({t.year})</p>
+              <p className="track-meta-line mono">
+                Sello · {t.label} ({t.year})
+              </p>
               <Preview30sPlayer
                 trackTitle={t.title}
                 previewUrl={t.previewUrl}
@@ -216,7 +221,7 @@ export function DigPage() {
                     if (t.spotifyOpenUrl) window.open(t.spotifyOpenUrl, '_blank')
                   }}
                 >
-                  Open in Spotify
+                  Abrir en Spotify
                 </button>
               </div>
             </article>

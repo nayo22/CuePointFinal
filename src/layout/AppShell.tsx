@@ -2,8 +2,9 @@ import { getAuth, signOut } from 'firebase/auth'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { GlobalSearchBar } from '../components/GlobalSearchBar'
 import { NotificationBell } from '../components/NotificationBell'
+import { setEditor } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
-import { useAppSelector } from '../store/hooks'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { flushPendingCuepointSave } from '../store/store'
 
 const nav = [
@@ -17,6 +18,7 @@ const nav = [
 
 export function AppShell() {
   const navigate = useNavigate()
+  const dispatch = useAppDispatch()
   const role = useAppSelector((s) => s.auth.role)
   const uid = useAppSelector((s) => s.auth.uid)
 
@@ -24,6 +26,8 @@ export function AppShell() {
     if (isFirebaseConfigured() && uid) {
       await flushPendingCuepointSave()
       await signOut(getAuth(getFirebaseApp()))
+    } else if (role === 'spectator') {
+      dispatch(setEditor())
     }
     navigate('/login')
   }

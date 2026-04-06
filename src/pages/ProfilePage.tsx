@@ -128,18 +128,19 @@ export function ProfilePage() {
             <Link className="btn btn-primary btn--sm" to="/login">
               Iniciar sesión
             </Link>
-            <Link className="btn btn-secondary btn--sm" to="/login">
-              Registrarse
+            <Link className="btn btn-secondary btn--sm" to="/login?mode=register">
+              Crear cuenta
             </Link>
           </div>
         ) : (
           <div className="profile-edit-block">
             <h3 className="profile-edit-heading">Tu perfil público</h3>
             <p className="api-card-desc">
-              Nombre que verán otros DJs y foto (pega un enlace a tu imagen).
+              Elige cómo te muestras en la comunidad y una imagen (con un
+              enlace público a tu foto).
             </p>
             <div className="field">
-              <label htmlFor="profile-dj-name">Nombre de DJ</label>
+              <label htmlFor="profile-dj-name">Nombre de usuario</label>
               <input
                 id="profile-dj-name"
                 type="text"
@@ -190,8 +191,8 @@ export function ProfilePage() {
 
         {!isSpotifyConfigured() ? (
           <p className="empty-hint">
-            La búsqueda en catálogo no está activa en esta instalación. Si eres
-            quien administra el sitio, revisa la configuración del proyecto.
+            Por ahora no está disponible conectar tu cuenta de música desde
+            aquí.
           </p>
         ) : spotifyOn ? (
           <div className="api-status-row">
@@ -224,9 +225,15 @@ export function ProfilePage() {
         )}
       </section>
 
-      <dialog ref={gateRef} className="profile-guest-dialog">
+      <dialog
+        ref={gateRef}
+        className="profile-guest-dialog"
+        aria-labelledby="profile-guest-gate-title"
+      >
         <div className="profile-guest-dialog-inner">
-          <h3 className="profile-guest-dialog-title">Inicia sesión primero</h3>
+          <h3 id="profile-guest-gate-title" className="profile-guest-dialog-title">
+            Inicia sesión primero
+          </h3>
           <p className="profile-guest-dialog-text">
             Para conectar Spotify necesitas una cuenta con correo y contraseña.
             Los invitados pueden explorar la app, pero no vincular Spotify.
@@ -237,7 +244,14 @@ export function ProfilePage() {
               to="/login"
               onClick={closeGuestGate}
             >
-              Ir a iniciar sesión
+              Iniciar sesión
+            </Link>
+            <Link
+              className="btn btn-secondary btn--sm"
+              to="/login?mode=register"
+              onClick={closeGuestGate}
+            >
+              Crear cuenta
             </Link>
             <button
               type="button"

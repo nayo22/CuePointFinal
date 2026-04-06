@@ -12,10 +12,11 @@ export async function exchangeAuthorizationCode(code: string): Promise<void> {
   const verifier = takePkceVerifier()
   if (!verifier)
     throw new Error(
-      'La sesión de conexión con Spotify expiró. Vuelve a intentarlo desde Perfil.',
+      'La conexión expiró. Vuelve a intentarlo desde Perfil.',
     )
   const clientId = getSpotifyClientId()
-  if (!clientId) throw new Error('Spotify no está configurado en esta versión.')
+  if (!clientId)
+    throw new Error('Esta función no está disponible en este entorno.')
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
@@ -29,8 +30,8 @@ export async function exchangeAuthorizationCode(code: string): Promise<void> {
     body: body.toString(),
   })
   if (!res.ok) {
-    const t = await res.text()
-    throw new Error(t || 'Token exchange failed')
+    await res.text().catch(() => '')
+    throw new Error('No se pudo completar el acceso. Intenta de nuevo.')
   }
   const data = (await res.json()) as {
     access_token: string

@@ -1,46 +1,46 @@
-import { useMemo, useState } from "react";
-import { EnergyStrip } from "../components/EnergyStrip";
-import { SetBuilderLiveCharts } from "../components/SetBuilderLiveCharts";
-import { addDraftTrack, makeDraftTrack } from "../features/draft/draftSlice";
-import { isHarmonicMatch } from "../lib/harmonicMatch";
-import { coverUrl } from "../lib/coverUrl";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
-import type { Energy } from "../types/models";
+import { useMemo, useState } from 'react'
+import { EnergyStrip } from '../components/EnergyStrip'
+import { SetBuilderLiveCharts } from '../components/SetBuilderLiveCharts'
+import { addDraftTrack, makeDraftTrack } from '../features/draft/draftSlice'
+import { isHarmonicMatch } from '../lib/harmonicMatch'
+import { coverUrl } from '../lib/coverUrl'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import type { Energy } from '../types/models'
 
 function energyClass(e: string) {
-  if (e === "low") return "tag tag-low";
-  if (e === "mid") return "tag tag-mid";
-  return "tag tag-high";
+  if (e === 'low') return 'tag tag-low'
+  if (e === 'mid') return 'tag tag-mid'
+  return 'tag tag-high'
 }
 
-function energyToChartValue(e: "low" | "mid" | "high"): number {
-  if (e === "low") return 0.35;
-  if (e === "mid") return 0.62;
-  return 0.94;
+function energyToChartValue(e: 'low' | 'mid' | 'high'): number {
+  if (e === 'low') return 0.35
+  if (e === 'mid') return 0.62
+  return 0.94
 }
 
 export function SetBuilderPage() {
-  const tracks = useAppSelector((s) => s.draft.tracks);
-  const dispatch = useAppDispatch();
+  const tracks = useAppSelector((s) => s.draft.tracks)
+  const dispatch = useAppDispatch()
 
-  const [newTitle, setNewTitle] = useState("");
-  const [newArtist, setNewArtist] = useState("");
-  const [newBpm, setNewBpm] = useState("126");
-  const [newKey, setNewKey] = useState("8A");
-  const [newEnergy, setNewEnergy] = useState<Energy>("mid");
+  const [newTitle, setNewTitle] = useState('')
+  const [newArtist, setNewArtist] = useState('')
+  const [newBpm, setNewBpm] = useState('126')
+  const [newKey, setNewKey] = useState('8A')
+  const [newEnergy, setNewEnergy] = useState<Energy>('mid')
 
-  const levels = tracks.map((t) => t.energy);
-  const bpms = tracks.map((t) => t.bpm);
-  const energySeries = tracks.map((t) => energyToChartValue(t.energy));
+  const levels = tracks.map((t) => t.energy)
+  const bpms = tracks.map((t) => t.bpm)
+  const energySeries = tracks.map((t) => energyToChartValue(t.energy))
 
   const compatFlags = useMemo(
     () =>
       tracks.map((t, i) => {
-        if (i === 0) return false;
-        return isHarmonicMatch(t, tracks[i - 1]);
+        if (i === 0) return false
+        return isHarmonicMatch(t, tracks[i - 1])
       }),
     [tracks],
-  );
+  )
 
   function handleAddTrack() {
     const track = makeDraftTrack({
@@ -49,13 +49,13 @@ export function SetBuilderPage() {
       bpm: Number(newBpm),
       key: newKey,
       energy: newEnergy,
-    });
-    dispatch(addDraftTrack(track));
-    setNewTitle("");
-    setNewArtist("");
-    setNewBpm("126");
-    setNewKey("8A");
-    setNewEnergy("mid");
+    })
+    dispatch(addDraftTrack(track))
+    setNewTitle('')
+    setNewArtist('')
+    setNewBpm('126')
+    setNewKey('8A')
+    setNewEnergy('mid')
   }
 
   return (
@@ -73,9 +73,7 @@ export function SetBuilderPage() {
         <button type="button" className="btn btn-ghost btn--sm">
           Share read-only link
         </button>
-        <span className="toolbar-hint mono">
-          Cover art via placeholder URLs
-        </span>
+        <span className="toolbar-hint mono">Cover art via placeholder URLs</span>
       </div>
 
       <div className="grid-2">
@@ -84,10 +82,7 @@ export function SetBuilderPage() {
 
       <div className="panel panel-gap panel--accent-green">
         <h2>Energy map (rollercoaster)</h2>
-        <EnergyStrip
-          levels={levels}
-          label="Energy progression for current set"
-        />
+        <EnergyStrip levels={levels} label="Energy progression for current set" />
       </div>
 
       <div className="panel panel--accent-orange">
@@ -133,7 +128,11 @@ export function SetBuilderPage() {
                     <span className={energyClass(t.energy)}>{t.energy}</span>
                   </td>
                   <td className="mono">
-                    {i === 0 ? "—" : compatFlags[i] ? "match" : "—"}
+                    {i === 0
+                      ? '—'
+                      : compatFlags[i]
+                        ? 'match'
+                        : '—'}
                   </td>
                   <td className="table-cell-cue">{t.cueIn}</td>
                   <td className="table-cell-cue">{t.cueOut}</td>
@@ -195,5 +194,5 @@ export function SetBuilderPage() {
         </div>
       </div>
     </>
-  );
+  )
 }

@@ -1,23 +1,23 @@
-import { useEffect, useId, useState } from "react";
-import { fetchNotifications } from "../services/backend";
-import type { NotificationItem } from "../types/models";
+import { useEffect, useId, useState } from 'react'
+import { fetchNotifications } from '../services/backend'
+import type { NotificationItem } from '../types/models'
 
 export function NotificationBell() {
-  const panelId = useId();
-  const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<NotificationItem[]>([]);
+  const panelId = useId()
+  const [open, setOpen] = useState(false)
+  const [items, setItems] = useState<NotificationItem[]>([])
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
     fetchNotifications().then((list) => {
-      if (!cancelled) setItems(list);
-    });
+      if (!cancelled) setItems(list)
+    })
     return () => {
-      cancelled = true;
-    };
-  }, []);
+      cancelled = true
+    }
+  }, [])
 
-  const unread = items.filter((n) => !n.read).length;
+  const unread = items.filter((n) => !n.read).length
 
   return (
     <div className="notif-wrap">
@@ -50,7 +50,7 @@ export function NotificationBell() {
             {items.map((n) => (
               <li
                 key={n.id}
-                className={n.read ? "notif-item" : "notif-item notif-item--new"}
+                className={n.read ? 'notif-item' : 'notif-item notif-item--new'}
               >
                 <div className="notif-item-title">{n.title}</div>
                 <div className="notif-item-detail">{n.detail}</div>
@@ -61,5 +61,5 @@ export function NotificationBell() {
         </div>
       ) : null}
     </div>
-  );
+  )
 }

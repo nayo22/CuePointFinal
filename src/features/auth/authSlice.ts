@@ -42,9 +42,18 @@ const authSlice = createSlice({
       state.email = action.payload.email
       state.role = 'editor'
     },
+    setUserProfile(
+      state,
+      action: PayloadAction<{ displayName: string | null; photoUrl: string | null }>,
+    ) {
+      state.displayName = action.payload.displayName
+      state.photoUrl = action.payload.photoUrl
+    },
     clearFirebaseUser(state) {
       state.uid = null
       state.email = null
+      state.displayName = null
+      state.photoUrl = null
     },
   },
 })

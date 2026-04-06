@@ -53,6 +53,7 @@ export function LoginPage() {
   )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [djName, setDjName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -96,8 +97,12 @@ export function LoginPage() {
         return
       }
     } else {
-      if (!trimmedEmail || !trimmedUser || !password) {
-        setError('Correo, nombre de usuario y contraseña son obligatorios.')
+      if (!trimmedEmail || !trimmedUser || !password || !confirmPassword) {
+        setError('Completa correo, usuario, contraseña y confirmación.')
+        return
+      }
+      if (password !== confirmPassword) {
+        setError('Las contraseñas no coinciden.')
         return
       }
     }
@@ -170,6 +175,7 @@ export function LoginPage() {
               className={`login-mode-tab ${mode === 'login' ? 'login-mode-tab--active' : ''}`}
               onClick={() => {
                 setMode('login')
+                setConfirmPassword('')
                 setSearchParams(
                   (prev) => {
                     const next = new URLSearchParams(prev)
@@ -231,7 +237,7 @@ export function LoginPage() {
           ) : null}
 
           <PasswordFieldWithToggle
-            key={mode}
+            key={`${mode}-password`}
             id="password"
             name="password"
             label="Contraseña"
@@ -239,6 +245,18 @@ export function LoginPage() {
             value={password}
             onChange={setPassword}
           />
+
+          {mode === 'register' ? (
+            <PasswordFieldWithToggle
+              key="register-confirm"
+              id="password-confirm"
+              name="password-confirm"
+              label="Confirmar contraseña"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+            />
+          ) : null}
 
           {error ? (
             <p className="login-error" role="alert">

@@ -1,6 +1,8 @@
+import { getAuth } from 'firebase/auth'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { setEditor } from '../features/auth/authSlice'
+import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
 import { exchangeAuthorizationCode } from '../services/spotifyApi'
 import { useAppDispatch } from '../store/hooks'
 
@@ -55,7 +57,13 @@ function SpotifyCallbackInner({ code }: { code: string }) {
       .then(() => {
         if (!cancelled) {
           dispatch(setEditor())
-          navigate('/dashboard', { replace: true })
+          const needsEmail =
+            isFirebaseConfigured() &&
+            getAuth(getFirebaseApp()).currentUser == null
+          navigate(
+            needsEmail ? '/login?spotify=connected' : '/dashboard',
+            { replace: true },
+          )
         }
       })
       .catch((e: unknown) => {

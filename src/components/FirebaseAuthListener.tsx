@@ -1,6 +1,10 @@
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { useEffect, useRef } from 'react'
-import { clearFirebaseUser, setFirebaseUser } from '../features/auth/authSlice'
+import {
+  clearFirebaseUser,
+  setAuthReady,
+  setFirebaseUser,
+} from '../features/auth/authSlice'
 import { replaceCrateIds } from '../features/crate/crateSlice'
 import { replaceDraftTracks } from '../features/draft/draftSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
@@ -13,9 +17,17 @@ export function FirebaseAuthListener() {
   const firestoreUnsub = useRef<(() => void) | null>(null)
 
   useEffect(() => {
-    if (!isFirebaseConfigured()) return
+    if (!isFirebaseConfigured()) {
+      dispatch(setAuthReady(true))
+      return
+    }
     const auth = getAuth(getFirebaseApp())
+    let first = true
     const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (first) {
+        dispatch(setAuthReady(true))
+        first = false
+      }
       firestoreUnsub.current?.()
       firestoreUnsub.current = null
       if (!user) {

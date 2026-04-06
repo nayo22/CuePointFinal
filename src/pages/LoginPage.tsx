@@ -4,8 +4,12 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import {
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
 import { setEditor, setSpectator } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
 import {
@@ -27,9 +31,17 @@ function authMessage(code: string): string {
   return 'Something went wrong. Try again.'
 }
 
+type LocationState = {
+  from?: { pathname: string; search: string }
+}
+
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
   const dispatch = useAppDispatch()
+  const authReady = useAppSelector((s) => s.auth.authReady)
+  const uid = useAppSelector((s) => s.auth.uid)
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -38,6 +50,21 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false)
 
   const firebaseOk = isFirebaseConfigured()
+  const spotifyJustConnected = searchParams.get('spotify') === 'connected'
+
+  useEffect(() => {
+    if (!firebaseOk || !authReady || !uid) return
+    const from = (location.state as LocationState | null)?.from
+    const dest = from
+      ? `${from.pathname}${from.search ?? ''}`
+      : '/dashboard'
+    navigate(dest, { replace: true })
+  }, [authReady, firebaseOk, location.state, navigate, uid])
+
+  function postAuthDestination(): string {
+    const from = (location.state as LocationState | null)?.from
+    return from ? `${from.pathname}${from.search ?? ''}` : '/dashboard'
+  }
 
   async function submitEmail() {
     setError(null)
@@ -64,7 +91,7 @@ export function LoginPage() {
         await signInWithEmailAndPassword(auth, trimmed, password)
       }
       dispatch(setEditor())
-      navigate('/dashboard')
+      navigate(postAuthDestination())
     } catch (e: unknown) {
       const code =
         e && typeof e === 'object' && 'code' in e && typeof e.code === 'string'
@@ -90,14 +117,21 @@ export function LoginPage() {
   }
 
   function goEditorDemo() {
-    dispatch(setEditor())
+    setError(null)
+    if (firebaseOk) {
+      dispatch(setSpectator())
+    } else {
+      dispatch(setEditor())
+    }
     navigate('/dashboard')
   }
 
   function connectSpotify() {
     setError(null)
     if (!isSpotifyConfigured()) {
-      setError('Add VITE_SPOTIFY_CLIENT_ID to .env and restart the dev server.')
+      setError(
+        'Spotify is not configured (missing VITE_SPOTIFY_CLIENT_ID in the build environment).',
+      )
       return
     }
     beginSpotifyLogin()
@@ -121,8 +155,15 @@ export function LoginPage() {
 
           {!firebaseOk ? (
             <p className="login-env-hint mono">
-              Firebase env vars missing — using local-only mode until you add a
-              .env file.
+              Firebase env vars missing — local-only mode until you configure
+              VITE_FIREBASE_* in the environment.
+            </p>
+          ) : null}
+
+          {spotifyJustConnected ? (
+            <p className="login-env-hint mono" role="status">
+              Spotify connected. Sign in with email to use Search and the rest
+              of the app.
             </p>
           ) : null}
 

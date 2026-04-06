@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { RequireSession, RootRedirect } from './components/RequireSession'
 import { AppShell } from './layout/AppShell'
 import { CratePage } from './pages/CratePage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -16,18 +17,20 @@ export default function App() {
     <Routes>
       <Route path="/spotify-callback" element={<SpotifyCallbackPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route element={<AppShell />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/builder" element={<SetBuilderPage />} />
-        <Route path="/dig" element={<DigPage />} />
-        <Route path="/explore" element={<ExplorePage />} />
-        <Route path="/ranking" element={<RankingPage />} />
-        <Route path="/crate" element={<CratePage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/sets/:id" element={<SetDetailPage />} />
+      <Route path="/" element={<RootRedirect />} />
+      <Route element={<RequireSession />}>
+        <Route element={<AppShell />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/builder" element={<SetBuilderPage />} />
+          <Route path="/dig" element={<DigPage />} />
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/ranking" element={<RankingPage />} />
+          <Route path="/crate" element={<CratePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/sets/:id" element={<SetDetailPage />} />
+        </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

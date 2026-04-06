@@ -1,13 +1,18 @@
 import { type FormEvent, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-export function GlobalSearchBar() {
-  const navigate = useNavigate()
-  const [q, setQ] = useState('')
+function GlobalSearchBarFields({
+  initialQ,
+  onNavigate,
+}: {
+  initialQ: string
+  onNavigate: (path: string) => void
+}) {
+  const [q, setQ] = useState(initialQ)
 
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    navigate(`/dig?q=${encodeURIComponent(q.trim() || '')}`)
+    onNavigate(`/dig?q=${encodeURIComponent(q.trim() || '')}`)
   }
 
   return (
@@ -28,5 +33,23 @@ export function GlobalSearchBar() {
         Search
       </button>
     </form>
+  )
+}
+
+export function GlobalSearchBar() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const onDig = location.pathname === '/dig'
+  const initialQ = onDig
+    ? new URLSearchParams(location.search).get('q') ?? ''
+    : ''
+  const syncKey = onDig ? `dig:${location.search}` : 'shell'
+
+  return (
+    <GlobalSearchBarFields
+      key={syncKey}
+      initialQ={initialQ}
+      onNavigate={(path) => navigate(path)}
+    />
   )
 }

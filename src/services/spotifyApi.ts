@@ -1,0 +1,186 @@
+import { getSpotifyClientId, getSpotifyRedirectUri } from '../lib/spotifyConfig'
+import type { Energy, Track } from '../types/models'
+import {
+  clearSpotifyTokens,
+  readSpotifyTokens,
+  takePkceVerifier,
+  writeSpotifyTokens,
+  type SpotifyStoredTokens,
+} from '../lib/spotifyTokens'
+
+export async function exchangeAuthorizationCode(code: string): Promise<void> {
+  const verifier = takePkceVerifier()
+  if (!verifier) throw new Error('PKCE session expired. Try connecting again.')
+  const clientId = getSpotifyClientId()
+  if (!clientId) throw new Error('Spotify client id is not set.')
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: getSpotifyRedirectUri(),
+    client_id: clientId,
+    code_verifier: verifier,
+  })
+  const res = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  })
+  if (!res.ok) {
+    const t = await res.text()
+    throw new Error(t || 'Token exchange failed')
+  }
+  const data = (await res.json()) as {
+    access_token: string
+    refresh_token: string
+    expires_in: number
+  }
+  writeSpotifyTokens({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at_ms: Date.now() + data.expires_in * 1000 - 60_000,
+  })
+}
+
+export async function getValidSpotifyAccessToken(): Promise<string | null> {
+  const clientId = getSpotifyClientId()
+  if (!clientId) return null
+  const t = readSpotifyTokens()
+  if (!t) return null
+  if (Date.now() < t.expires_at_ms) return t.access_token
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: t.refresh_token,
+    client_id: clientId,
+  })
+  const res = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  })
+  if (!res.ok) {
+    clearSpotifyTokens()
+    return null
+  }
+  const data = (await res.json()) as {
+    access_token: string
+    refresh_token?: string
+    expires_in: number
+  }
+  const next: SpotifyStoredTokens = {
+    access_token: data.access_token,
+    refresh_token: data.refresh_token ?? t.refresh_token,
+    expires_at_ms: Date.now() + data.expires_in * 1000 - 60_000,
+  }
+  writeSpotifyTokens(next)
+  return next.access_token
+}
+
+type SpotifySearchTrack = {
+  id: string
+  name: string
+  artists: { name: string }[]
+  album: {
+    name: string
+    images: { url: string; height?: number }[]
+    release_date: string
+    label?: string
+  }
+  preview_url: string | null
+  external_urls: { spotify: string }
+}
+
+type SpotifyAudioFeature = {
+  tempo: number
+  key: number
+  mode: number
+  danceability: number
+  energy: number
+  acousticness: number
+}
+
+const KEY_NAMES = [
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#',
+  'A',
+  'A#',
+  'B',
+]
+
+function keyLabel(key: number, mode: number): string {
+  if (key < 0) return '—'
+  const k = KEY_NAMES[key] ?? '—'
+  return mode === 1 ? `${k} maj` : `${k} min`
+}
+
+function energyTag(e: number): Energy {
+  if (e < 0.38) return 'low'
+  if (e < 0.72) return 'mid'
+  return 'high'
+}
+
+function mapToTrack(
+  t: SpotifySearchTrack,
+  af: SpotifyAudioFeature | null | undefined,
+): Track {
+  const tempo = af?.tempo ?? 120
+  const keyStr = af ? keyLabel(af.key, af.mode) : '—'
+  const img = t.album.images[0]?.url ?? ''
+  const y =
+    parseInt(t.album.release_date.slice(0, 4), 10) || new Date().getFullYear()
+  return {
+    id: t.id,
+    title: t.name,
+    artist: t.artists[0]?.name ?? 'Unknown',
+    bpm: Math.round(tempo) || 120,
+    key: keyStr,
+    energy: energyTag(af?.energy ?? 0.5),
+    cueIn: '',
+    cueOut: '',
+    danceability: af?.danceability ?? 0.7,
+    spotifyEnergy: af?.energy ?? 0.7,
+    acousticness: af?.acousticness ?? 0.1,
+    label: t.album.label ?? t.album.name,
+    year: y,
+    coverSeed: img || `spotify-${t.id}`,
+    previewUrl: t.preview_url ?? undefined,
+    spotifyOpenUrl: t.external_urls?.spotify,
+  }
+}
+
+export async function searchSpotifyTracks(
+  query: string,
+  accessToken: string,
+  limit = 15,
+): Promise<Track[]> {
+  const q = encodeURIComponent(query.trim())
+  const res = await fetch(
+    `https://api.spotify.com/v1/search?q=${q}&type=track&limit=${limit}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  if (!res.ok) throw new Error('Spotify search failed')
+  const data = (await res.json()) as {
+    tracks?: { items?: SpotifySearchTrack[] }
+  }
+  const items = data.tracks?.items ?? []
+  const ids = items.map((x) => x.id).filter(Boolean)
+  if (ids.length === 0) return []
+  const afRes = await fetch(
+    `https://api.spotify.com/v1/audio-features?ids=${ids.join(',')}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  let features: (SpotifyAudioFeature | null)[] = []
+  if (afRes.ok) {
+    const afJson = (await afRes.json()) as {
+      audio_features?: (SpotifyAudioFeature | null)[]
+    }
+    features = afJson.audio_features ?? []
+  }
+  return items.map((t, i) => mapToTrack(t, features[i] ?? undefined))
+}

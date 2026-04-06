@@ -12,6 +12,8 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router-dom'
+import { AuthScreenFrame } from '../components/AuthScreenFrame'
+import { PasswordFieldWithToggle } from '../components/PasswordFieldWithToggle'
 import { setEditor, setSpectator } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
 import { saveUserProfileFields } from '../services/userCuepointFirestore'
@@ -50,9 +52,7 @@ export function LoginPage() {
   )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
   const [djName, setDjName] = useState('')
-  const [photoUrlField, setPhotoUrlField] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -78,36 +78,29 @@ export function LoginPage() {
     return from ? `${from.pathname}${from.search ?? ''}` : '/dashboard'
   }
 
-  async function persistDjProfile(
-    user: User,
-    name: string,
-    photoUrl?: string,
-  ) {
-    const trimmedName = name.trim()
-    const trimmedPhoto = photoUrl?.trim() ?? ''
-    const profile: { displayName?: string; photoURL?: string } = {}
-    if (trimmedName) profile.displayName = trimmedName
-    if (trimmedPhoto) profile.photoURL = trimmedPhoto
-    if (Object.keys(profile).length > 0) {
-      await updateProfile(user, profile)
-      await saveUserProfileFields(user.uid, {
-        displayName: trimmedName || undefined,
-        photoUrl: trimmedPhoto || undefined,
-      })
-    }
+  async function persistDjProfile(user: User, name: string) {
+    const trimmed = name.trim()
+    await updateProfile(user, { displayName: trimmed })
+    await saveUserProfileFields(user.uid, { displayName: trimmed })
   }
 
   async function submitEmail() {
     setError(null)
-    const trimmed = email.trim()
-    if (!trimmed || !password) {
-      setError('Correo y contraseña son obligatorios.')
-      return
+    const trimmedEmail = email.trim()
+    const trimmedUser = djName.trim()
+
+    if (mode === 'login') {
+      if (!trimmedEmail || !password) {
+        setError('Correo y contraseña son obligatorios.')
+        return
+      }
+    } else {
+      if (!trimmedEmail || !trimmedUser || !password) {
+        setError('Correo, nombre de usuario y contraseña son obligatorios.')
+        return
+      }
     }
-    if (mode === 'register' && password !== confirm) {
-      setError('Las contraseñas no coinciden.')
-      return
-    }
+
     if (!backendOk) {
       setError(
         'El servicio de cuentas no está disponible en este momento. Vuelve más tarde.',
@@ -120,14 +113,12 @@ export function LoginPage() {
       if (mode === 'register') {
         const cred = await createUserWithEmailAndPassword(
           auth,
-          trimmed,
+          trimmedEmail,
           password,
         )
-        await persistDjProfile(cred.user, djName, photoUrlField)
+        await persistDjProfile(cred.user, trimmedUser)
       } else {
-        await signInWithEmailAndPassword(auth, trimmed, password)
-        const u = auth.currentUser
-        if (u && djName.trim()) await persistDjProfile(u, djName)
+        await signInWithEmailAndPassword(auth, trimmedEmail, password)
       }
       dispatch(setEditor())
       navigate(postAuthDestination())
@@ -156,15 +147,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-card-wrap">
-        <div className="login-card">
-          <div className="login-brand">
-            <h1>
-              <span className="login-title-o">Cue</span>
-              <span className="login-title-g">Point</span>
-            </h1>
-          </div>
+    <AuthScreenFrame>
           <p className="sub">
             Arma tus sets con criterio: energía, armonía y un crate inteligente.
             Busca música, explora y comparte con otros DJs.
@@ -219,38 +202,6 @@ export function LoginPage() {
           </div>
 
           <div className="field">
-            <label htmlFor="dj-display-name">
-              Nombre de usuario (opcional)
-            </label>
-            <input
-              id="dj-display-name"
-              name="djName"
-              type="text"
-              autoComplete="nickname"
-              placeholder="Cómo quieres que te vean en la app"
-              value={djName}
-              onChange={(e) => setDjName(e.target.value)}
-            />
-          </div>
-
-          {mode === 'register' ? (
-            <div className="field">
-              <label htmlFor="register-photo-url">
-                Foto de perfil — enlace (opcional)
-              </label>
-              <input
-                id="register-photo-url"
-                name="photoUrl"
-                type="url"
-                autoComplete="off"
-                placeholder="https://…"
-                value={photoUrlField}
-                onChange={(e) => setPhotoUrlField(e.target.value)}
-              />
-            </div>
-          ) : null}
-
-          <div className="field">
             <label htmlFor="email">Correo</label>
             <input
               id="email"
@@ -261,30 +212,31 @@ export function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div className="field">
-            <label htmlFor="password">Contraseña</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+
           {mode === 'register' ? (
             <div className="field">
-              <label htmlFor="password-confirm">Confirmar contraseña</label>
+              <label htmlFor="dj-display-name">Nombre de usuario</label>
               <input
-                id="password-confirm"
-                name="password-confirm"
-                type="password"
-                autoComplete="new-password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
+                id="dj-display-name"
+                name="djName"
+                type="text"
+                autoComplete="username"
+                placeholder="Tu nombre en la app"
+                value={djName}
+                onChange={(e) => setDjName(e.target.value)}
               />
             </div>
           ) : null}
+
+          <PasswordFieldWithToggle
+            key={mode}
+            id="password"
+            name="password"
+            label="Contraseña"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            value={password}
+            onChange={setPassword}
+          />
 
           {error ? (
             <p className="login-error" role="alert">
@@ -316,8 +268,6 @@ export function LoginPage() {
               Continuar como invitado
             </button>
           </div>
-        </div>
-      </div>
-    </div>
+    </AuthScreenFrame>
   )
 }

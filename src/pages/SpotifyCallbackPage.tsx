@@ -1,9 +1,10 @@
 import { getAuth } from 'firebase/auth'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { AuthScreenFrame } from '../components/AuthScreenFrame'
 import { setEditor } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
-import { exchangeAuthorizationCode } from '../services/spotifyApi'
+import { exchangeAuthorizationCodeOnce } from '../services/spotifyApi'
 import { useAppDispatch } from '../store/hooks'
 
 export function SpotifyCallbackPage() {
@@ -17,33 +18,25 @@ export function SpotifyCallbackPage() {
         ? 'No autorizaste la conexión. Puedes intentarlo de nuevo cuando quieras.'
         : 'No se pudo completar la conexión. Vuelve a intentarlo desde Perfil.'
     return (
-      <div className="login-page">
-        <div className="login-card-wrap">
-          <div className="login-card">
-            <p className="sub" role="alert">
-              {friendly}
-            </p>
-            <p className="muted-link-block">
-              <Link to="/login">Volver al inicio de sesión</Link>
-            </p>
-          </div>
-        </div>
-      </div>
+      <AuthScreenFrame>
+        <p className="sub" role="alert">
+          {friendly}
+        </p>
+        <p className="muted-link-block">
+          <Link to="/login">Volver al inicio de sesión</Link>
+        </p>
+      </AuthScreenFrame>
     )
   }
 
   if (!code) {
     return (
-      <div className="login-page">
-        <div className="login-card-wrap">
-          <div className="login-card">
-            <p className="sub">Falta el código de autorización.</p>
-            <p className="muted-link-block">
-              <Link to="/login">Volver al inicio de sesión</Link>
-            </p>
-          </div>
-        </div>
-      </div>
+      <AuthScreenFrame>
+        <p className="sub">Falta el código de autorización.</p>
+        <p className="muted-link-block">
+          <Link to="/login">Volver al inicio de sesión</Link>
+        </p>
+      </AuthScreenFrame>
     )
   }
 
@@ -57,7 +50,7 @@ function SpotifyCallbackInner({ code }: { code: string }) {
 
   useEffect(() => {
     let cancelled = false
-    exchangeAuthorizationCode(code)
+    exchangeAuthorizationCodeOnce(code)
       .then(() => {
         if (!cancelled) {
           dispatch(setEditor())
@@ -85,15 +78,11 @@ function SpotifyCallbackInner({ code }: { code: string }) {
   }, [code, dispatch, navigate])
 
   return (
-    <div className="login-page">
-      <div className="login-card-wrap">
-        <div className="login-card">
-          <p className="sub">{message}</p>
-          <p className="muted-link-block">
-            <Link to="/login">Volver al inicio de sesión</Link>
-          </p>
-        </div>
-      </div>
-    </div>
+    <AuthScreenFrame>
+      <p className="sub">{message}</p>
+      <p className="muted-link-block">
+        <Link to="/login">Volver al inicio de sesión</Link>
+      </p>
+    </AuthScreenFrame>
   )
 }

@@ -1,11 +1,12 @@
+import { getAuth, updateProfile } from 'firebase/auth'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SpotifyLogoMark } from '../components/SpotifyLogoMark'
 import { setUserProfile } from '../features/auth/authSlice'
-import { isFirebaseConfigured } from '../lib/firebase'
+import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
 import { beginSpotifyLogin, disconnectSpotify } from '../lib/spotifyAuth'
-import { isSpotifyConfigured } from '../lib/spotifyConfig'
 import { readSpotifyTokens } from '../lib/spotifyTokens'
+import { uploadProfilePhoto } from '../services/profilePhotoUpload'
 import { saveUserProfileFields } from '../services/userCuepointFirestore'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
@@ -22,16 +23,31 @@ export function ProfilePage() {
   const canLinkSpotify = backendOk && uid != null
 
   const [spotifyOn, setSpotifyOn] = useState(() => readSpotifyTokens() != null)
+  const [spotifyConfigError, setSpotifyConfigError] = useState<string | null>(
+    null,
+  )
   const [editName, setEditName] = useState(displayName ?? '')
-  const [editPhoto, setEditPhoto] = useState(photoUrl ?? '')
+  const [pickedFile, setPickedFile] = useState<File | null>(null)
+  const [objectPreview, setObjectPreview] = useState<string | null>(null)
+  const [avatarCleared, setAvatarCleared] = useState(false)
   const [profileSaved, setProfileSaved] = useState<string | null>(null)
   const [profileBusy, setProfileBusy] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const gateRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
     setEditName(displayName ?? '')
-    setEditPhoto(photoUrl ?? '')
-  }, [displayName, photoUrl])
+  }, [displayName])
+
+  useEffect(() => {
+    if (!pickedFile) {
+      setObjectPreview(null)
+      return
+    }
+    const u = URL.createObjectURL(pickedFile)
+    setObjectPreview(u)
+    return () => URL.revokeObjectURL(u)
+  }, [pickedFile])
 
   useEffect(() => {
     function sync() {
@@ -49,26 +65,80 @@ export function ProfilePage() {
     gateRef.current?.close()
   }
 
+  const displayPhotoSrc =
+    pickedFile && objectPreview
+      ? objectPreview
+      : avatarCleared
+        ? null
+        : photoUrl?.trim() || null
+
+  function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (!f.type.startsWith('image/')) {
+      setProfileSaved('Elige un archivo de imagen.')
+      return
+    }
+    setPickedFile(f)
+    setAvatarCleared(false)
+    setProfileSaved(null)
+    e.target.value = ''
+  }
+
+  function onRemovePhoto() {
+    setPickedFile(null)
+    setAvatarCleared(true)
+    setProfileSaved(null)
+  }
+
   async function saveProfile() {
     if (!uid) return
     setProfileBusy(true)
     setProfileSaved(null)
     try {
       const name = editName.trim()
-      const pic = editPhoto.trim()
+      let finalPhoto: string
+      if (avatarCleared && !pickedFile) {
+        finalPhoto = ''
+      } else if (pickedFile) {
+        finalPhoto = await uploadProfilePhoto(uid, pickedFile)
+      } else {
+        finalPhoto = (photoUrl ?? '').trim()
+      }
+
       await saveUserProfileFields(uid, {
         displayName: name || '',
-        photoUrl: pic || '',
+        photoUrl: finalPhoto,
       })
+
+      const auth = getAuth(getFirebaseApp())
+      const u = auth.currentUser
+      if (u) {
+        if (finalPhoto && finalPhoto.startsWith('https://')) {
+          await updateProfile(u, {
+            displayName: name || null,
+            photoURL: finalPhoto,
+          })
+        } else if (finalPhoto === '') {
+          await updateProfile(u, { displayName: name || null, photoURL: null })
+        } else {
+          await updateProfile(u, { displayName: name || null })
+        }
+      }
+
       dispatch(
         setUserProfile({
           displayName: name || null,
-          photoUrl: pic || null,
+          photoUrl: finalPhoto || null,
         }),
       )
+      setPickedFile(null)
+      setAvatarCleared(false)
       setProfileSaved('Perfil actualizado.')
-    } catch {
-      setProfileSaved('No se pudo guardar. Intenta de nuevo.')
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'No se pudo guardar. Intenta de nuevo.'
+      setProfileSaved(msg)
     } finally {
       setProfileBusy(false)
     }
@@ -80,6 +150,20 @@ export function ProfilePage() {
     (isGuest ? 'Invitado' : 'DJ')
 
   const avatarLetter = shownName.charAt(0).toUpperCase()
+
+  function handleConnectSpotify() {
+    setSpotifyConfigError(null)
+    if (!canLinkSpotify) {
+      openGuestGate()
+      return
+    }
+    const started = beginSpotifyLogin({ showDialog: true })
+    if (!started) {
+      setSpotifyConfigError(
+        'No se pudo iniciar la conexión. En el entorno de desarrollo, define VITE_SPOTIFY_CLIENT_ID en tu archivo .env; en Vercel, añade la misma variable en Settings → Environment Variables.',
+      )
+    }
+  }
 
   return (
     <>
@@ -96,10 +180,10 @@ export function ProfilePage() {
       <section className="panel panel--accent-orange panel-spaced profile-hero">
         <div className="profile-hero-row">
           <div className="profile-avatar-wrap">
-            {photoUrl?.trim() ? (
+            {displayPhotoSrc ? (
               <img
                 className="profile-avatar-img"
-                src={photoUrl.trim()}
+                src={displayPhotoSrc}
                 alt=""
                 width={96}
                 height={96}
@@ -136,8 +220,8 @@ export function ProfilePage() {
           <div className="profile-edit-block">
             <h3 className="profile-edit-heading">Tu perfil público</h3>
             <p className="api-card-desc">
-              Elige cómo te muestras en la comunidad y una imagen (con un
-              enlace público a tu foto).
+              Elige tu nombre visible y una foto desde tu equipo (JPG, PNG o
+              WebP).
             </p>
             <div className="field">
               <label htmlFor="profile-dj-name">Nombre de usuario</label>
@@ -149,16 +233,36 @@ export function ProfilePage() {
                 autoComplete="nickname"
               />
             </div>
-            <div className="field">
-              <label htmlFor="profile-photo-url">URL de foto de perfil</label>
+            <div className="field profile-photo-field">
+              <span className="profile-photo-label" id="profile-photo-label">
+                Foto de perfil
+              </span>
               <input
-                id="profile-photo-url"
-                type="url"
-                placeholder="https://…"
-                value={editPhoto}
-                onChange={(e) => setEditPhoto(e.target.value)}
-                autoComplete="off"
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="profile-photo-input"
+                aria-labelledby="profile-photo-label"
+                onChange={onPickPhoto}
               />
+              <div className="profile-photo-actions">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn--sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Elegir imagen…
+                </button>
+                {(photoUrl?.trim() || pickedFile) && !avatarCleared ? (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn--sm"
+                    onClick={onRemovePhoto}
+                  >
+                    Quitar foto
+                  </button>
+                ) : null}
+              </div>
             </div>
             <button
               type="button"
@@ -169,7 +273,14 @@ export function ProfilePage() {
               {profileBusy ? 'Guardando…' : 'Guardar perfil'}
             </button>
             {profileSaved ? (
-              <p className="profile-saved-hint" role="status">
+              <p
+                className={
+                  profileSaved === 'Perfil actualizado.'
+                    ? 'profile-saved-hint'
+                    : 'login-error profile-saved-hint'
+                }
+                role="status"
+              >
                 {profileSaved}
               </p>
             ) : null}
@@ -189,38 +300,35 @@ export function ProfilePage() {
           </div>
         </div>
 
-        {!isSpotifyConfigured() ? (
-          <p className="empty-hint">
-            Por ahora no está disponible conectar tu cuenta de música desde
-            aquí.
-          </p>
-        ) : spotifyOn ? (
+        {spotifyOn ? (
           <div className="api-status-row">
             <span className="pill active">Conectado</span>
             <button
               type="button"
               className="btn btn-ghost btn--sm"
-              onClick={() => disconnectSpotify()}
+              onClick={() => {
+                disconnectSpotify()
+                setSpotifyConfigError(null)
+              }}
             >
               Desconectar
             </button>
           </div>
         ) : (
-          <div className="api-status-row">
+          <div className="api-status-row api-status-row--stack">
             <span className="pill">No conectado</span>
             <button
               type="button"
-              className="btn btn-secondary btn--sm"
-              onClick={() => {
-                if (!canLinkSpotify) {
-                  openGuestGate()
-                  return
-                }
-                beginSpotifyLogin({ showDialog: true })
-              }}
+              className="btn btn-secondary btn--sm profile-spotify-connect-btn"
+              onClick={handleConnectSpotify}
             >
-              Conectar Spotify
+              Conectar con Spotify
             </button>
+            {spotifyConfigError ? (
+              <p className="profile-spotify-config-hint" role="alert">
+                {spotifyConfigError}
+              </p>
+            ) : null}
           </div>
         )}
       </section>

@@ -7,9 +7,9 @@ import { clearSpotifyTokens, storePkceVerifier } from './spotifyTokens'
 
 const SPOTIFY_SCOPES = ['user-read-email', 'user-read-private'].join(' ')
 
-export function beginSpotifyLogin(opts?: { showDialog?: boolean }) {
+export function beginSpotifyLogin(opts?: { showDialog?: boolean }): boolean {
   const clientId = getSpotifyClientId()
-  if (!clientId) return
+  if (!clientId) return false
   const verifier = createCodeVerifier()
   storePkceVerifier(verifier)
   void createCodeChallenge(verifier).then((challenge) => {
@@ -26,6 +26,7 @@ export function beginSpotifyLogin(opts?: { showDialog?: boolean }) {
       `https://accounts.spotify.com/authorize?${p.toString()}`,
     )
   })
+  return true
 }
 
 export function disconnectSpotify() {

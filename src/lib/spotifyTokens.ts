@@ -43,6 +43,14 @@ export function storePkceVerifier(v: string) {
   sessionStorage.setItem(PKCE_KEY, v)
 }
 
+export function peekPkceVerifier(): string | null {
+  return sessionStorage.getItem(PKCE_KEY)
+}
+
+export function clearPkceVerifier() {
+  sessionStorage.removeItem(PKCE_KEY)
+}
+
 export function takePkceVerifier(): string | null {
   const v = sessionStorage.getItem(PKCE_KEY)
   sessionStorage.removeItem(PKCE_KEY)

@@ -1,5 +1,6 @@
 import { getAuth, signOut } from 'firebase/auth'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { CuePointLogo } from '../components/CuePointLogo'
 import { GlobalSearchBar } from '../components/GlobalSearchBar'
 import { NotificationBell } from '../components/NotificationBell'
 import { setEditor } from '../features/auth/authSlice'
@@ -38,8 +39,8 @@ export function AppShell() {
         Skip to content
       </a>
       <header className="shell-header">
-        <NavLink className="brand" to="/dashboard" end>
-          Cue<span>Point</span>
+        <NavLink className="brand brand--logo" to="/dashboard" end title="CuePoint">
+          <CuePointLogo variant="header" />
         </NavLink>
         <nav className="shell-nav" aria-label="Primary">
           {nav.map(({ to, label }) => (

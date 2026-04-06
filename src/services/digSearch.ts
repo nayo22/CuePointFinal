@@ -19,11 +19,7 @@ export async function searchDigTracks(query: string): Promise<Track[]> {
     throw new Error(DIG_SEARCH_FAILURE_MESSAGE)
   }
   if (token) {
-    try {
-      return await searchSpotifyTracks(q, token)
-    } catch {
-      throw new Error(DIG_SEARCH_FAILURE_MESSAGE)
-    }
+    return await searchSpotifyTracks(q, token)
   }
   return searchDiscoveryTracks(q)
 }

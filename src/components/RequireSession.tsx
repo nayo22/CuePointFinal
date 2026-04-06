@@ -1,16 +1,15 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { AuthScreenFrame } from './AuthScreenFrame'
 import { isFirebaseConfigured } from '../lib/firebase'
 import { useAppSelector } from '../store/hooks'
 
 function AuthBootScreen() {
   return (
-    <div className="login-page">
-      <div className="login-card-wrap">
-        <p className="sub" role="status">
-          Cargando sesión…
-        </p>
-      </div>
-    </div>
+    <AuthScreenFrame>
+      <p className="sub" role="status">
+        Cargando sesión…
+      </p>
+    </AuthScreenFrame>
   )
 }
 

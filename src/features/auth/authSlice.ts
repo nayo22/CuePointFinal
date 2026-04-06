@@ -1,44 +1,44 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 
-export type DjRole = "editor" | "spectator";
+export type DjRole = 'editor' | 'spectator'
 
 type AuthState = {
-  role: DjRole;
-  uid: string | null;
-  email: string | null;
-};
+  role: DjRole
+  uid: string | null
+  email: string | null
+}
 
 const initialState: AuthState = {
-  role: "editor",
+  role: 'editor',
   uid: null,
   email: null,
-};
+}
 
 const authSlice = createSlice({
-  name: "auth",
+  name: 'auth',
   initialState,
   reducers: {
     setEditor(state) {
-      state.role = "editor";
+      state.role = 'editor'
     },
     setSpectator(state) {
-      state.role = "spectator";
+      state.role = 'spectator'
     },
     setFirebaseUser(
       state,
       action: PayloadAction<{ uid: string; email: string | null }>,
     ) {
-      state.uid = action.payload.uid;
-      state.email = action.payload.email;
-      state.role = "editor";
+      state.uid = action.payload.uid
+      state.email = action.payload.email
+      state.role = 'editor'
     },
     clearFirebaseUser(state) {
-      state.uid = null;
-      state.email = null;
+      state.uid = null
+      state.email = null
     },
   },
-});
+})
 
 export const { setEditor, setSpectator, setFirebaseUser, clearFirebaseUser } =
-  authSlice.actions;
-export default authSlice.reducer;
+  authSlice.actions
+export default authSlice.reducer

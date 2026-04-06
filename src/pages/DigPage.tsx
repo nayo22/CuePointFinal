@@ -23,6 +23,7 @@ export function DigPage() {
 
   const [results, setResults] = useState<Track[]>([])
   const [searchError, setSearchError] = useState<string | null>(null)
+  const [searching, setSearching] = useState(false)
   const [spotifyLive, setSpotifyLive] = useState(
     () => isSpotifyConfigured() && readSpotifyTokens() != null,
   )
@@ -37,6 +38,10 @@ export function DigPage() {
 
   useEffect(() => {
     let cancelled = false
+    const hasQuery = q.trim().length > 0
+    if (hasQuery) setSearching(true)
+    else setSearching(false)
+
     searchDigTracks(q)
       .then((list) => {
         if (!cancelled) {
@@ -53,6 +58,9 @@ export function DigPage() {
               : DIG_SEARCH_FAILURE_MESSAGE,
           )
         }
+      })
+      .finally(() => {
+        if (!cancelled) setSearching(false)
       })
     return () => {
       cancelled = true
@@ -121,6 +129,28 @@ export function DigPage() {
         {!spotifyLive && isSpotifyConfigured() ? (
           <p className="mono search-query-line">
             Connect Spotify from Login or Profile to search the real catalog.
+          </p>
+        ) : null}
+        {!isSpotifyConfigured() && q.trim() && !searching && !searchError ? (
+          <p className="mono search-query-line" role="status">
+            Spotify no está configurado en este servidor. Quien despliega la app
+            debe definir <span className="mono">VITE_SPOTIFY_CLIENT_ID</span> en
+            Vercel (Environment Variables) y volver a desplegar; sin eso solo hay
+            canciones de demostración y búsquedas como esta suelen quedar vacías.
+          </p>
+        ) : null}
+        {searching && q.trim() ? (
+          <p className="mono search-query-line" role="status">
+            Buscando…
+          </p>
+        ) : null}
+        {spotifyLive &&
+        q.trim() &&
+        !searching &&
+        !searchError &&
+        results.length === 0 ? (
+          <p className="mono search-query-line" role="status">
+            No encontramos canciones para esa búsqueda. Prueba otras palabras.
           </p>
         ) : null}
       </section>

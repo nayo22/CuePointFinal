@@ -38,7 +38,7 @@ export function getFirebaseApp(): FirebaseApp {
   const config = readWebConfig()
   if (!config) {
     throw new Error(
-      'Firebase is not configured. Add a .env file with VITE_FIREBASE_* keys (see .env.example).',
+      'Firebase is not configured. Add a .env file with VITE_FIREBASE_* keys.',
     )
   }
   cached = getApps().length > 0 ? getApps()[0] : initializeApp(config)

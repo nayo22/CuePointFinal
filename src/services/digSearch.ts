@@ -1,17 +1,28 @@
+import { isSpotifyConfigured } from '../lib/spotifyConfig'
+import { readSpotifyTokens } from '../lib/spotifyTokens'
 import { searchDiscoveryTracks } from './backend'
 import { getValidSpotifyAccessToken, searchSpotifyTracks } from './spotifyApi'
 import type { Track } from '../types/models'
 
+export const DIG_SEARCH_FAILURE_MESSAGE =
+  'Oh no, algo salió mal, inténtalo de nuevo D:'
+
 export async function searchDigTracks(query: string): Promise<Track[]> {
   const q = query.trim()
   if (q.length === 0) return searchDiscoveryTracks('')
+
+  const spotifyLinked =
+    isSpotifyConfigured() && readSpotifyTokens() != null
   const token = await getValidSpotifyAccessToken()
+
+  if (spotifyLinked && !token) {
+    throw new Error(DIG_SEARCH_FAILURE_MESSAGE)
+  }
   if (token) {
     try {
-      const spotifyRows = await searchSpotifyTracks(q, token)
-      if (spotifyRows.length > 0) return spotifyRows
+      return await searchSpotifyTracks(q, token)
     } catch {
-      return searchDiscoveryTracks(q)
+      throw new Error(DIG_SEARCH_FAILURE_MESSAGE)
     }
   }
   return searchDiscoveryTracks(q)

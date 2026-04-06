@@ -7,7 +7,10 @@ import { isHarmonicMatch } from '../lib/harmonicMatch'
 import { coverUrl } from '../lib/coverUrl'
 import { isSpotifyConfigured } from '../lib/spotifyConfig'
 import { readSpotifyTokens } from '../lib/spotifyTokens'
-import { searchDigTracks } from '../services/digSearch'
+import {
+  DIG_SEARCH_FAILURE_MESSAGE,
+  searchDigTracks,
+} from '../services/digSearch'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { Track } from '../types/models'
 
@@ -41,8 +44,15 @@ export function DigPage() {
           setResults(list)
         }
       })
-      .catch(() => {
-        if (!cancelled) setSearchError('Search failed. Try again.')
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setResults([])
+          setSearchError(
+            err instanceof Error && err.message
+              ? err.message
+              : DIG_SEARCH_FAILURE_MESSAGE,
+          )
+        }
       })
     return () => {
       cancelled = true

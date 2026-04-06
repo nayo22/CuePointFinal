@@ -41,38 +41,71 @@ export async function exchangeAuthorizationCode(code: string): Promise<void> {
   })
 }
 
+/** Serializes refresh so concurrent callers (e.g. Strict Mode) never rotate the refresh token twice. */
+let refreshInFlight: Promise<string | null> | null = null
+
+async function refreshSpotifyAccessToken(): Promise<string | null> {
+  const clientId = getSpotifyClientId()
+  if (!clientId) return null
+  const t = readSpotifyTokens()
+  if (!t) return null
+  if (Date.now() < t.expires_at_ms) return t.access_token
+
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: t.refresh_token,
+    client_id: clientId,
+  })
+  try {
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    })
+    const rawText = await res.text()
+    if (!res.ok) {
+      let invalidGrant = rawText.includes('invalid_grant')
+      if (!invalidGrant) {
+        try {
+          invalidGrant =
+            (JSON.parse(rawText) as { error?: string }).error === 'invalid_grant'
+        } catch {
+          /* ignore */
+        }
+      }
+      if (invalidGrant) clearSpotifyTokens()
+      return null
+    }
+    const data = JSON.parse(rawText) as {
+      access_token: string
+      refresh_token?: string
+      expires_in: number
+    }
+    const next: SpotifyStoredTokens = {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token ?? t.refresh_token,
+      expires_at_ms: Date.now() + data.expires_in * 1000 - 60_000,
+    }
+    writeSpotifyTokens(next)
+    return next.access_token
+  } catch {
+    return null
+  }
+}
+
 export async function getValidSpotifyAccessToken(): Promise<string | null> {
   const clientId = getSpotifyClientId()
   if (!clientId) return null
   const t = readSpotifyTokens()
   if (!t) return null
   if (Date.now() < t.expires_at_ms) return t.access_token
-  const body = new URLSearchParams({
-    grant_type: 'refresh_token',
-    refresh_token: t.refresh_token,
-    client_id: clientId,
-  })
-  const res = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  })
-  if (!res.ok) {
-    clearSpotifyTokens()
-    return null
+
+  if (!refreshInFlight) {
+    refreshInFlight = refreshSpotifyAccessToken().finally(() => {
+      refreshInFlight = null
+    })
   }
-  const data = (await res.json()) as {
-    access_token: string
-    refresh_token?: string
-    expires_in: number
-  }
-  const next: SpotifyStoredTokens = {
-    access_token: data.access_token,
-    refresh_token: data.refresh_token ?? t.refresh_token,
-    expires_at_ms: Date.now() + data.expires_in * 1000 - 60_000,
-  }
-  writeSpotifyTokens(next)
-  return next.access_token
+  return refreshInFlight
 }
 
 type SpotifySearchTrack = {

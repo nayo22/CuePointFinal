@@ -1,4 +1,4 @@
-/* CuePoint — dark club UI: hierarchy 1 orange, 2 green, 3 pink (accents only) */
+
 
 :root {
   --bg-deep: #050608;
@@ -25,7 +25,7 @@
   --radius-md: 12px;
   --radius-lg: 16px;
 
-  /* Ritmo vertical uniforme entre bloques de página */
+  
   --page-stack-gap: 1.5rem;
 
   color-scheme: dark;
@@ -50,7 +50,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Fondo oscuro uniforme; el color lo aportan componentes (verde / naranja / rosa) */
 body::before {
   content: '';
   position: fixed;
@@ -138,8 +137,6 @@ textarea:focus-visible {
   }
 }
 
-/* —— App chrome —— */
-
 .app-shell {
   display: flex;
   flex-direction: column;
@@ -212,7 +209,6 @@ textarea:focus-visible {
   box-sizing: border-box;
 }
 
-/* Franja: naranja dominante + verde (sólido) */
 .shell-glow {
   display: flex;
   height: 3px;
@@ -293,7 +289,6 @@ textarea:focus-visible {
   box-shadow: inset 0 -2px 0 var(--accent);
 }
 
-
 .shell-main {
   position: relative;
   z-index: 0;
@@ -307,8 +302,6 @@ textarea:focus-visible {
   margin: 0 auto;
   box-sizing: border-box;
 }
-
-/* —— Page top chips & set name —— */
 
 .page-chips-bar {
   margin: 0;
@@ -377,8 +370,6 @@ textarea:focus-visible {
   color: var(--text-muted);
   background: rgba(255, 255, 255, 0.04);
 }
-
-/* —— Panels & grid —— */
 
 .grid-2 {
   display: grid;
@@ -461,8 +452,6 @@ textarea:focus-visible {
   color: var(--text-muted);
   font-weight: 400;
 }
-
-/* —— Buttons & forms —— */
 
 .btn {
   display: inline-flex;
@@ -559,8 +548,6 @@ textarea:focus-visible {
   resize: vertical;
 }
 
-/* —— Tables —— */
-
 .table-wrap {
   overflow-x: auto;
   margin-top: 0.75rem;
@@ -629,8 +616,6 @@ table.data td.mono {
   font-size: 0.88rem;
 }
 
-/* —— Tags —— */
-
 .tag {
   display: inline-block;
   padding: 0.2rem 0.5rem;
@@ -657,8 +642,6 @@ table.data td.mono {
   color: var(--accent);
   border: 1px solid rgba(0, 255, 156, 0.4);
 }
-
-/* —— Energy strip —— */
 
 .energy-strip {
   display: flex;
@@ -696,8 +679,6 @@ table.data td.mono {
   background: var(--accent);
 }
 
-/* —— Lists —— */
-
 .set-list {
   list-style: none;
   margin: 0;
@@ -707,7 +688,6 @@ table.data td.mono {
   gap: var(--page-stack-gap);
 }
 
-/* Listas dentro de un panel: filas compactas (p. ej. ranking en dashboard) */
 .panel .set-list {
   gap: 0;
 }
@@ -796,8 +776,6 @@ table.data td.mono {
   border: 1px dashed rgba(255, 122, 0, 0.45);
   background: rgba(255, 122, 0, 0.06);
 }
-
-/* —— Login —— */
 
 .login-page {
   min-height: 100vh;
@@ -1022,7 +1000,6 @@ table.data td.mono {
   width: 100%;
 }
 
-/* Navegación “volver” — siempre visible, estilo control */
 .page-back-nav {
   margin: 0;
   align-self: flex-start;
@@ -1069,8 +1046,6 @@ table.data td.mono {
   color: var(--text-muted);
   margin: 0;
 }
-
-/* —— Comments —— */
 
 .comment {
   padding: 0.65rem 0;
@@ -1123,8 +1098,6 @@ table.data td.mono {
 .feedback-block {
   margin-top: 0.75rem;
 }
-
-/* —— Utilities —— */
 
 .mono {
   font-family: var(--font-mono);
@@ -1180,8 +1153,6 @@ a.btn:hover {
   font-weight: 600;
 }
 
-/* —— Global search —— */
-
 .shell-search {
   display: flex;
   gap: 0.5rem;
@@ -1207,12 +1178,6 @@ a.btn:hover {
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-/* —— Notifications —— */
-
-/*
- * El panel absoluto baja sobre main: el header debe ganar el stacking
- * frente a .panel (backdrop-filter) y al orden del DOM.
- */
 .notif-wrap {
   position: relative;
   z-index: 101;
@@ -1245,7 +1210,7 @@ a.btn:hover {
   z-index: 200;
   max-height: 70vh;
   overflow: auto;
-  /* Opaco: anula .panel (bg-card + blur) para que no trasluzca */
+  
   background: var(--bg-elevated);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -1302,8 +1267,6 @@ a.btn:hover {
   margin-top: 0.25rem;
 }
 
-/* —— Role toggle —— */
-
 .role-toggle {
   display: inline-flex;
   border: 1px solid var(--border);
@@ -1326,8 +1289,6 @@ a.btn:hover {
   background: var(--accent-soft);
   color: var(--accent);
 }
-
-/* —— Insight bars —— */
 
 .insight-bars {
   display: flex;
@@ -1378,8 +1339,6 @@ a.btn:hover {
   font-size: 0.68rem;
 }
 
-/* —— Recharts (set builder) —— */
-
 .chart-panel {
   min-height: 0;
 }
@@ -1395,8 +1354,6 @@ a.btn:hover {
   min-height: 220px;
   margin-top: 0.25rem;
 }
-
-/* —— Step charts (legacy layout) —— */
 
 .step-chart-wrap {
   margin-top: 0.35rem;
@@ -1446,8 +1403,6 @@ a.btn:hover {
   font-size: 0.72rem;
   color: var(--text-muted);
 }
-
-/* —— Preview 30s —— */
 
 .preview-30 {
   display: flex;
@@ -1503,8 +1458,6 @@ a.btn:hover {
   font-size: 0.68rem;
   color: var(--text-muted);
 }
-
-/* —— Dig page —— */
 
 .filter-bar {
   display: flex;
@@ -1602,8 +1555,6 @@ a.btn:hover {
   flex-shrink: 0;
 }
 
-/* —— Set builder toolbar —— */
-
 .toolbar-row {
   display: flex;
   flex-wrap: wrap;
@@ -1650,8 +1601,6 @@ a.btn:hover {
   padding-bottom: 0.75rem;
   background: rgba(255, 255, 255, 0.02);
 }
-
-/* —— Dashboard —— */
 
 .mission-tagline {
   margin: 0;
@@ -1768,8 +1717,6 @@ a.btn:hover {
   color: var(--text-muted);
 }
 
-/* —— Crate skeleton —— */
-
 .skeleton-row td {
   padding: 0.85rem 0.65rem;
 }
@@ -1791,8 +1738,6 @@ a.btn:hover {
   font-size: 0.8rem;
   color: var(--text-muted);
 }
-
-/* —— Set detail per-track —— */
 
 .track-detail-list {
   list-style: none;
@@ -2114,4 +2059,11 @@ table.data a:hover {
   *::after {
     transition-duration: 0.01ms !important;
   }
+}
+
+.route-loading {
+  min-height: 40vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

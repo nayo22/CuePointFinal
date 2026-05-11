@@ -1,5 +1,5 @@
 import { getAuth } from 'firebase/auth'
-import { getFirebaseApp } from '../lib/firebase'
+import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
 import { getSpotifyClientId, getSpotifyRedirectUri } from '../lib/spotifyConfig'
 import type { Energy, Track } from '../types/models'
 import {
@@ -36,12 +36,12 @@ export async function exchangeAuthorizationCode(code: string): Promise<void> {
   const verifier = peekPkceVerifier()
   if (!verifier) {
     throw new Error(
-      'La conexión expiró o ya se usó. Vuelve a pulsar Conectar con Spotify en Perfil.',
+      'That sign-in session expired or was already used. Tap Connect Spotify in Profile again.',
     )
   }
   const clientId = getSpotifyClientId()
   if (!clientId)
-    throw new Error('Esta función no está disponible en este entorno.')
+    throw new Error('This action is not available in this environment.')
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
@@ -62,17 +62,17 @@ export async function exchangeAuthorizationCode(code: string): Promise<void> {
       const j = JSON.parse(raw) as { error?: string; error_description?: string }
       if (j.error === 'invalid_grant') {
         throw new Error(
-          'El enlace de Spotify ya no es válido. Intenta conectar de nuevo desde Perfil.',
+          'That Spotify sign-in link is no longer valid. Connect again from Profile.',
         )
       }
       detail = j.error_description ?? j.error ?? ''
     } catch (e) {
-      if (e instanceof Error && e.message.includes('Intenta conectar')) throw e
+      if (e instanceof Error && e.message.includes('sign-in link')) throw e
     }
     throw new Error(
       detail
         ? `Spotify: ${detail}`
-        : 'No se pudo completar el acceso. Intenta de nuevo.',
+        : 'Could not complete Spotify access. Try again.',
     )
   }
   let data: {
@@ -88,13 +88,16 @@ export async function exchangeAuthorizationCode(code: string): Promise<void> {
     }
   } catch {
     clearPkceVerifier()
-    throw new Error('Respuesta inválida de Spotify. Intenta de nuevo.')
+    throw new Error('Spotify returned an invalid response. Try again.')
   }
   if (!data.access_token) {
     clearPkceVerifier()
-    throw new Error('Spotify no devolvió un token. Intenta de nuevo.')
+    throw new Error('Spotify did not return an access token. Try again.')
   }
-  const firebaseUid = getAuth(getFirebaseApp()).currentUser?.uid ?? null
+  let firebaseUid: string | null = null
+  if (isFirebaseConfigured()) {
+    firebaseUid = getAuth(getFirebaseApp()).currentUser?.uid ?? null
+  }
   const prev = firebaseUid
     ? readSpotifyTokensForFirebaseUid(firebaseUid)
     : readPendingSpotifyTokens()
@@ -104,7 +107,7 @@ export async function exchangeAuthorizationCode(code: string): Promise<void> {
       : prev?.refresh_token
   if (!refresh) {
     clearPkceVerifier()
-    throw new Error('Spotify no devolvió sesión renovable. Intenta de nuevo.')
+    throw new Error('Spotify did not return a renewable session. Try again.')
   }
   writeSpotifyTokensForSession(firebaseUid, {
     access_token: data.access_token,
@@ -114,19 +117,16 @@ export async function exchangeAuthorizationCode(code: string): Promise<void> {
   clearPkceVerifier()
 }
 
-/** Serializes refresh so concurrent callers (e.g. Strict Mode) never rotate the refresh token twice. */
 let refreshInFlight: Promise<string | null> | null = null
 
-async function refreshSpotifyAccessToken(): Promise<string | null> {
+async function requestSpotifyTokenRefresh(
+  refreshToken: string,
+): Promise<SpotifyStoredTokens | null> {
   const clientId = getSpotifyClientId()
   if (!clientId) return null
-  const t = readSpotifyTokens()
-  if (!t) return null
-  if (Date.now() < t.expires_at_ms) return t.access_token
-
   const body = new URLSearchParams({
     grant_type: 'refresh_token',
-    refresh_token: t.refresh_token,
+    refresh_token: refreshToken,
     client_id: clientId,
   })
   try {
@@ -143,7 +143,7 @@ async function refreshSpotifyAccessToken(): Promise<string | null> {
           invalidGrant =
             (JSON.parse(rawText) as { error?: string }).error === 'invalid_grant'
         } catch {
-          /* ignore */
+          void 0
         }
       }
       if (invalidGrant) clearSpotifyTokens()
@@ -154,16 +154,27 @@ async function refreshSpotifyAccessToken(): Promise<string | null> {
       refresh_token?: string
       expires_in: number
     }
+    const prev = readSpotifyTokens()
     const next: SpotifyStoredTokens = {
       access_token: data.access_token,
-      refresh_token: data.refresh_token ?? t.refresh_token,
+      refresh_token: data.refresh_token ?? prev?.refresh_token ?? refreshToken,
       expires_at_ms: Date.now() + data.expires_in * 1000 - 60_000,
     }
-    writeSpotifyTokens(next)
-    return next.access_token
+    return next
   } catch {
     return null
   }
+}
+
+async function refreshSpotifyAccessToken(): Promise<string | null> {
+  const t = readSpotifyTokens()
+  if (!t) return null
+  if (Date.now() < t.expires_at_ms) return t.access_token
+
+  const next = await requestSpotifyTokenRefresh(t.refresh_token)
+  if (!next) return null
+  writeSpotifyTokens(next)
+  return next.access_token
 }
 
 export async function getValidSpotifyAccessToken(): Promise<string | null> {
@@ -179,6 +190,35 @@ export async function getValidSpotifyAccessToken(): Promise<string | null> {
     })
   }
   return refreshInFlight
+}
+
+async function refreshSpotifyAccessTokenForced(): Promise<string | null> {
+  const t = readSpotifyTokens()
+  if (!t?.refresh_token) return null
+  const next = await requestSpotifyTokenRefresh(t.refresh_token)
+  if (!next) return null
+  writeSpotifyTokens(next)
+  return next.access_token
+}
+
+function parseSpotifyWebApiErrorMessage(body: string): string | null {
+  try {
+    const j = JSON.parse(body) as {
+      error?: { message?: string; status?: number } | string
+    }
+    if (typeof j.error === 'string' && j.error.length > 0) return j.error
+    if (
+      j.error &&
+      typeof j.error === 'object' &&
+      typeof j.error.message === 'string' &&
+      j.error.message.length > 0
+    ) {
+      return j.error.message
+    }
+  } catch {
+    void 0
+  }
+  return null
 }
 
 type SpotifySearchTrack = {
@@ -266,26 +306,40 @@ export async function searchSpotifyTracks(
   limit = 15,
 ): Promise<Track[]> {
   const encoded = encodeURIComponent(query.trim())
-  const res = await fetch(
-    `https://api.spotify.com/v1/search?q=${encoded}&type=track&limit=${limit}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  )
+  const url = `https://api.spotify.com/v1/search?q=${encoded}&type=track&limit=${limit}`
+
+  async function runSearch(token: string) {
+    return fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  }
+
+  let tokenUsed = accessToken
+  let res = await runSearch(tokenUsed)
+  if (res.status === 401) {
+    const recovered = await refreshSpotifyAccessTokenForced()
+    if (recovered) {
+      tokenUsed = recovered
+      res = await runSearch(tokenUsed)
+    }
+  }
   if (res.status === 401) {
     clearSpotifyTokens()
     throw new Error(
-      'Tu sesión de Spotify caducó. Vuelve a conectar en Perfil.',
+      'Your Spotify session expired. Connect again from Profile.',
     )
   }
   if (!res.ok) {
     const body = await res.text()
-    let msg = 'No se pudo buscar en Spotify.'
-    try {
-      const j = JSON.parse(body) as { error?: { message?: string } }
-      if (j.error?.message) msg = j.error.message
-    } catch {
-      /* ignore */
-    }
-    throw new Error(msg)
+    const parsed = parseSpotifyWebApiErrorMessage(body)
+    const hint =
+      parsed ??
+      (body.trim().length > 0
+        ? body.trim().slice(0, 160)
+        : `HTTP ${res.status}`)
+    throw new Error(
+      `Spotify search failed (${hint}). If it keeps happening, disconnect and reconnect from Profile.`,
+    )
   }
   const data = (await res.json()) as {
     tracks?: { items?: SpotifySearchTrack[] }
@@ -295,7 +349,7 @@ export async function searchSpotifyTracks(
   if (ids.length === 0) return []
   const afRes = await fetch(
     `https://api.spotify.com/v1/audio-features?ids=${ids.join(',')}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
+    { headers: { Authorization: `Bearer ${tokenUsed}` } },
   )
   let features: (SpotifyAudioFeature | null)[] = []
   if (afRes.ok) {

@@ -9,21 +9,26 @@ type FirebaseWebConfig = {
   appId: string
 }
 
+function trimEnv(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
 function readWebConfig(): FirebaseWebConfig | null {
-  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY
-  const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
-  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID
-  const storageBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET
-  const messagingSenderId = import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID
-  const appId = import.meta.env.VITE_FIREBASE_APP_ID
-  if (!apiKey || !projectId) return null
+  const apiKey = trimEnv(import.meta.env.VITE_FIREBASE_API_KEY)
+  const authDomain = trimEnv(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN)
+  const projectId = trimEnv(import.meta.env.VITE_FIREBASE_PROJECT_ID)
+  const messagingSenderId = trimEnv(
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  )
+  const appId = trimEnv(import.meta.env.VITE_FIREBASE_APP_ID)
+  if (!apiKey || !projectId || !appId) return null
   return {
     apiKey,
-    authDomain: authDomain ?? `${projectId}.firebaseapp.com`,
+    authDomain: authDomain || `${projectId}.firebaseapp.com`,
     projectId,
-    storageBucket: storageBucket ?? `${projectId}.appspot.com`,
-    messagingSenderId: messagingSenderId ?? '',
-    appId: appId ?? '',
+    storageBucket: `${projectId}.appspot.com`,
+    messagingSenderId,
+    appId,
   }
 }
 
@@ -38,7 +43,7 @@ export function getFirebaseApp(): FirebaseApp {
   const config = readWebConfig()
   if (!config) {
     throw new Error(
-      'Firebase is not configured. Add a .env file with VITE_FIREBASE_* keys.',
+      'Firebase is not configured. Copy .env.example to .env and set VITE_FIREBASE_* values.',
     )
   }
   cached = getApps().length > 0 ? getApps()[0] : initializeApp(config)

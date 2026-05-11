@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import authReducer from '../features/auth/authSlice'
 import crateReducer from '../features/crate/crateSlice'
+import inboxReducer from '../features/inbox/inboxSlice'
 import { persistCrateIds } from '../features/crate/crateSlice'
 import draftReducer from '../features/draft/draftSlice'
 import { persistDraftTracks } from '../features/draft/draftSlice'
@@ -12,6 +13,7 @@ export const store = configureStore({
     auth: authReducer,
     crate: crateReducer,
     draft: draftReducer,
+    inbox: inboxReducer,
   },
 })
 

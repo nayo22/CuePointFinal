@@ -1,3 +1,5 @@
+import { getAuth } from 'firebase/auth'
+import { getFirebaseApp, isFirebaseConfigured } from './firebase'
 import { store } from '../store/store'
 
 const LEGACY_LS_KEY = 'cuepoint-spotify-tokens-v1'
@@ -13,6 +15,17 @@ export type SpotifyStoredTokens = {
 
 function userStorageKey(uid: string) {
   return `${USER_KEY_PREFIX}${uid}`
+}
+
+export function getEffectiveFirebaseUidForSpotify(): string | null {
+  const fromStore = store.getState().auth.uid
+  if (fromStore) return fromStore
+  if (!isFirebaseConfigured()) return null
+  try {
+    return getAuth(getFirebaseApp()).currentUser?.uid ?? null
+  } catch {
+    return null
+  }
 }
 
 function notifySpotifyAuth() {
@@ -48,7 +61,7 @@ export function writeSpotifyTokensForSession(
     }
     notifySpotifyAuth()
   } catch {
-    /* ignore */
+    void 0
   }
 }
 
@@ -91,7 +104,7 @@ export function readPendingSpotifyTokens(): SpotifyStoredTokens | null {
 }
 
 export function readSpotifyTokens(): SpotifyStoredTokens | null {
-  const uid = store.getState().auth.uid
+  const uid = getEffectiveFirebaseUidForSpotify()
   if (!uid) return null
   try {
     const raw = localStorage.getItem(userStorageKey(uid))
@@ -111,23 +124,23 @@ export function readSpotifyTokens(): SpotifyStoredTokens | null {
 }
 
 export function writeSpotifyTokens(t: SpotifyStoredTokens) {
-  const uid = store.getState().auth.uid
+  const uid = getEffectiveFirebaseUidForSpotify()
   if (!uid) return
   try {
     localStorage.setItem(userStorageKey(uid), JSON.stringify(t))
     notifySpotifyAuth()
   } catch {
-    /* ignore */
+    void 0
   }
 }
 
 export function clearSpotifyTokens() {
-  const uid = store.getState().auth.uid
+  const uid = getEffectiveFirebaseUidForSpotify()
   scrubLegacySpotifyKeys()
   try {
     sessionStorage.removeItem(PENDING_SESSION_KEY)
   } catch {
-    /* ignore */
+    void 0
   }
   if (uid) localStorage.removeItem(userStorageKey(uid))
   notifySpotifyAuth()
@@ -140,7 +153,7 @@ export function clearSpotifyTokensForFirebaseUid(
   try {
     sessionStorage.removeItem(PENDING_SESSION_KEY)
   } catch {
-    /* ignore */
+    void 0
   }
   if (uid) localStorage.removeItem(userStorageKey(uid))
   notifySpotifyAuth()

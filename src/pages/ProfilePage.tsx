@@ -5,10 +5,15 @@ import { SpotifyLogoMark } from '../components/SpotifyLogoMark'
 import { setUserProfile } from '../features/auth/authSlice'
 import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
 import { beginSpotifyLogin, disconnectSpotify } from '../lib/spotifyAuth'
-import { readSpotifyTokens } from '../lib/spotifyTokens'
+import {
+  getEffectiveFirebaseUidForSpotify,
+  readSpotifyTokens,
+} from '../lib/spotifyTokens'
 import { uploadProfilePhoto } from '../services/profilePhotoUpload'
 import { saveUserProfileFields } from '../services/userCuepointFirestore'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
+
+const PROFILE_UPDATED_MSG = 'Profile updated.'
 
 export function ProfilePage() {
   const dispatch = useAppDispatch()
@@ -18,9 +23,10 @@ export function ProfilePage() {
   const displayName = useAppSelector((s) => s.auth.displayName)
   const photoUrl = useAppSelector((s) => s.auth.photoUrl)
 
-  const isGuest = role === 'spectator' || !uid
+  const effectiveUid = uid ?? getEffectiveFirebaseUidForSpotify()
+  const isGuest = role === 'spectator' || effectiveUid == null
   const backendOk = isFirebaseConfigured()
-  const canLinkSpotify = backendOk && uid != null
+  const canLinkSpotify = backendOk && effectiveUid != null
 
   const [, setSpotifyAuthTick] = useState(0)
   const [spotifyConfigError, setSpotifyConfigError] = useState<string | null>(
@@ -77,7 +83,7 @@ export function ProfilePage() {
     const f = e.target.files?.[0]
     if (!f) return
     if (!f.type.startsWith('image/')) {
-      setProfileSaved('Elige un archivo de imagen.')
+      setProfileSaved('Choose an image file.')
       return
     }
     setPickedFile(f)
@@ -94,6 +100,10 @@ export function ProfilePage() {
 
   async function saveProfile() {
     if (!uid) return
+    if (!isFirebaseConfigured()) {
+      setProfileSaved('Firebase is not configured for this build.')
+      return
+    }
     setProfileBusy(true)
     setProfileSaved(null)
     try {
@@ -102,7 +112,7 @@ export function ProfilePage() {
       if (avatarCleared && !pickedFile) {
         finalPhoto = ''
       } else if (pickedFile) {
-        finalPhoto = await uploadProfilePhoto(uid, pickedFile)
+        finalPhoto = await uploadProfilePhoto(pickedFile)
       } else {
         finalPhoto = (photoUrl ?? '').trim()
       }
@@ -135,10 +145,10 @@ export function ProfilePage() {
       )
       setPickedFile(null)
       setAvatarCleared(false)
-      setProfileSaved('Perfil actualizado.')
+      setProfileSaved(PROFILE_UPDATED_MSG)
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : 'No se pudo guardar. Intenta de nuevo.'
+        err instanceof Error ? err.message : 'Could not save. Try again.'
       setProfileSaved(msg)
     } finally {
       setProfileBusy(false)
@@ -148,7 +158,7 @@ export function ProfilePage() {
   const shownName =
     displayName?.trim() ||
     email?.split('@')[0] ||
-    (isGuest ? 'Invitado' : 'DJ')
+    (isGuest ? 'Guest' : 'DJ')
 
   const avatarLetter = shownName.charAt(0).toUpperCase()
 
@@ -161,21 +171,21 @@ export function ProfilePage() {
     const started = beginSpotifyLogin({ showDialog: true })
     if (!started) {
       setSpotifyConfigError(
-        'No se pudo iniciar la conexión. En el entorno de desarrollo, define VITE_SPOTIFY_CLIENT_ID en tu archivo .env; en Vercel, añade la misma variable en Settings → Environment Variables.',
+        'Could not start the connection. For local development, set VITE_SPOTIFY_CLIENT_ID in your .env file. On Vercel, add the same variable under Settings → Environment Variables.',
       )
     }
   }
 
   return (
     <>
-      <nav className="page-back-nav" aria-label="Volver al inicio">
+      <nav className="page-back-nav" aria-label="Back to home">
         <Link to="/dashboard" className="page-back-link">
-          ← Inicio
+          ← Home
         </Link>
       </nav>
 
       <div className="chip-row page-chips-bar">
-        <span className="chip chip--green">Perfil</span>
+        <span className="chip chip--green">Profile</span>
       </div>
 
       <section className="panel panel--accent-orange panel-spaced profile-hero">
@@ -201,8 +211,8 @@ export function ProfilePage() {
               <p className="mono profile-email-line">{email}</p>
             ) : isGuest ? (
               <p className="profile-guest-hint">
-                Estás como invitado. Crea una cuenta para guardar tu trabajo y
-                conectar Spotify.
+                You are browsing as a guest. Create an account to save your work and
+                link Spotify.
               </p>
             ) : null}
           </div>
@@ -211,21 +221,21 @@ export function ProfilePage() {
         {isGuest ? (
           <div className="profile-guest-actions">
             <Link className="btn btn-primary btn--sm" to="/login">
-              Iniciar sesión
+              Sign in
             </Link>
             <Link className="btn btn-secondary btn--sm" to="/login?mode=register">
-              Crear cuenta
+              Create account
             </Link>
           </div>
         ) : (
           <div className="profile-edit-block">
-            <h3 className="profile-edit-heading">Tu perfil público</h3>
+            <h3 className="profile-edit-heading">Your public profile</h3>
             <p className="api-card-desc">
-              Elige tu nombre visible y una foto desde tu equipo (JPG, PNG o
+              Choose the name others see and a photo from your device (JPG, PNG, or
               WebP).
             </p>
             <div className="field">
-              <label htmlFor="profile-dj-name">Nombre de usuario</label>
+              <label htmlFor="profile-dj-name">Display name</label>
               <input
                 id="profile-dj-name"
                 type="text"
@@ -236,7 +246,7 @@ export function ProfilePage() {
             </div>
             <div className="field profile-photo-field">
               <span className="profile-photo-label" id="profile-photo-label">
-                Foto de perfil
+                Profile photo
               </span>
               <input
                 ref={fileInputRef}
@@ -252,7 +262,7 @@ export function ProfilePage() {
                   className="btn btn-secondary btn--sm"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  Elegir imagen…
+                  Choose image…
                 </button>
                 {(photoUrl?.trim() || pickedFile) && !avatarCleared ? (
                   <button
@@ -260,7 +270,7 @@ export function ProfilePage() {
                     className="btn btn-ghost btn--sm"
                     onClick={onRemovePhoto}
                   >
-                    Quitar foto
+                    Remove photo
                   </button>
                 ) : null}
               </div>
@@ -271,12 +281,12 @@ export function ProfilePage() {
               disabled={profileBusy}
               onClick={() => void saveProfile()}
             >
-              {profileBusy ? 'Guardando…' : 'Guardar perfil'}
+              {profileBusy ? 'Saving…' : 'Save profile'}
             </button>
             {profileSaved ? (
               <p
                 className={
-                  profileSaved === 'Perfil actualizado.'
+                  profileSaved === PROFILE_UPDATED_MSG
                     ? 'profile-saved-hint'
                     : 'login-error profile-saved-hint'
                 }
@@ -293,17 +303,17 @@ export function ProfilePage() {
         <div className="profile-spotify-head">
           <SpotifyLogoMark size={48} />
           <div>
-            <h2 className="profile-spotify-title">Conéctate con Spotify</h2>
+            <h2 className="profile-spotify-title">Connect Spotify</h2>
             <p className="api-card-desc profile-spotify-desc">
-              Vincula tu cuenta para buscar millones de temas en CuePoint, ver
-              datos útiles del audio y abrir canciones en Spotify cuando quieras.
+              Link your account to search millions of tracks in CuePoint, see helpful
+              audio details, and open songs in Spotify when you want.
             </p>
           </div>
         </div>
 
         {spotifyOn ? (
           <div className="api-status-row">
-            <span className="pill active">Conectado</span>
+            <span className="pill active">Connected</span>
             <button
               type="button"
               className="btn btn-ghost btn--sm"
@@ -312,18 +322,18 @@ export function ProfilePage() {
                 setSpotifyConfigError(null)
               }}
             >
-              Desconectar
+              Disconnect
             </button>
           </div>
         ) : (
           <div className="api-status-row api-status-row--stack">
-            <span className="pill">No conectado</span>
+            <span className="pill">Not connected</span>
             <button
               type="button"
               className="btn btn-secondary btn--sm profile-spotify-connect-btn"
               onClick={handleConnectSpotify}
             >
-              Conectar con Spotify
+              Connect Spotify
             </button>
             {spotifyConfigError ? (
               <p className="profile-spotify-config-hint" role="alert">
@@ -341,11 +351,11 @@ export function ProfilePage() {
       >
         <div className="profile-guest-dialog-inner">
           <h3 id="profile-guest-gate-title" className="profile-guest-dialog-title">
-            Inicia sesión primero
+            Sign in first
           </h3>
           <p className="profile-guest-dialog-text">
-            Para conectar Spotify necesitas una cuenta con correo y contraseña.
-            Los invitados pueden explorar la app, pero no vincular Spotify.
+            To connect Spotify you need an email-and-password account. Guests can
+            explore the app, but cannot link Spotify.
           </p>
           <div className="profile-guest-dialog-actions">
             <Link
@@ -353,21 +363,21 @@ export function ProfilePage() {
               to="/login"
               onClick={closeGuestGate}
             >
-              Iniciar sesión
+              Sign in
             </Link>
             <Link
               className="btn btn-secondary btn--sm"
               to="/login?mode=register"
               onClick={closeGuestGate}
             >
-              Crear cuenta
+              Create account
             </Link>
             <button
               type="button"
               className="btn btn-ghost btn--sm"
               onClick={closeGuestGate}
             >
-              Cerrar
+              Close
             </button>
           </div>
         </div>

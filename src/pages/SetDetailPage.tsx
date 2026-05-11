@@ -54,7 +54,7 @@ export function SetDetailPage() {
         </p>
         <div className="chip-row set-detail-chips">
           <span className="chip chip--orange">{set.tracks.length} tracks</span>
-          <span className="chip chip--green">Comunidad y comentarios</span>
+          <span className="chip chip--green">Community and comments</span>
         </div>
       </div>
 
@@ -117,7 +117,7 @@ export function SetDetailPage() {
                   </p>
                 </div>
                 <div>
-                  <h4 className="micro-heading">Ritmo y energía</h4>
+                  <h4 className="micro-heading">Rhythm and energy</h4>
                   <SpotifyInsightBars
                     danceability={t.danceability}
                     energy={t.spotifyEnergy}
@@ -125,7 +125,7 @@ export function SetDetailPage() {
                   />
                 </div>
                 <div>
-                  <h4 className="micro-heading">Sello y año</h4>
+                  <h4 className="micro-heading">Label and year</h4>
                   <p className="track-meta-block mono">
                     {t.label} · {t.year}
                   </p>

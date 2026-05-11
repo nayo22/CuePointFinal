@@ -66,14 +66,30 @@ export function SetBuilderPage() {
       </div>
 
       <div className="toolbar-row panel panel-gap panel--accent-orange">
-        <span className="toolbar-label mono">Toolbar</span>
-        <button type="button" className="btn btn-secondary btn--sm">
-          Export set JSON
+        <span className="toolbar-label mono">Acciones</span>
+        <button
+          type="button"
+          className="btn btn-secondary btn--sm"
+          onClick={() => {
+            const body = JSON.stringify(
+              { tracks, exportedAt: new Date().toISOString() },
+              null,
+              2,
+            )
+            const blob = new Blob([body], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'cuepoint-set.json'
+            a.click()
+            URL.revokeObjectURL(url)
+          }}
+        >
+          Descargar set (JSON)
         </button>
-        <button type="button" className="btn btn-ghost btn--sm">
-          Share read-only link
-        </button>
-        <span className="toolbar-hint mono">Cover art via placeholder URLs</span>
+        <span className="toolbar-hint mono">
+          Incluye la lista actual del borrador
+        </span>
       </div>
 
       <div className="grid-2">

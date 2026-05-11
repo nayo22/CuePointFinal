@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { TrackCover } from '../components/TrackCover'
 import { removeFromCrate } from '../features/crate/crateSlice'
 import { allTracksForCrate, alsoInCratesByTrackId } from '../data/seed'
+import { isFirebaseConfigured } from '../lib/firebase'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { Track } from '../types/models'
 
@@ -9,6 +10,8 @@ export function CratePage() {
   const dispatch = useAppDispatch()
   const ids = useAppSelector((s) => s.crate.ids)
   const draftTracks = useAppSelector((s) => s.draft.tracks)
+  const uid = useAppSelector((s) => s.auth.uid)
+  const cloudSync = Boolean(uid && isFirebaseConfigured())
 
   const saved = useMemo(() => {
     const pool = new Map(
@@ -21,18 +24,22 @@ export function CratePage() {
     <>
       <div className="chip-row page-chips-bar">
         <span className="chip chip--orange">{saved.length} saved</span>
-        <span className="chip chip--green">En este dispositivo</span>
+        <span className="chip chip--green">
+          {cloudSync
+            ? 'Cloud sync on (crate & draft)'
+            : 'This device only (sign in for sync)'}
+        </span>
       </div>
 
       <div className="panel panel--accent-orange">
         <h2>Smart Crate</h2>
         <p className="api-card-desc crate-intro">
-          Temas que guardaste desde Búsqueda y los sets. En la última columna ves
-          si otros DJs también los tienen en su crate.
+          Tracks you saved from Search and from sets. The last column shows whether
+          other DJs keep the same tune in their crate.
         </p>
         {saved.length === 0 ? (
           <p className="empty-hint">
-            Tu crate está vacío — añade temas desde Búsqueda o un set.
+            Your crate is empty — add tracks from Search or a set.
           </p>
         ) : (
           <div className="table-wrap">

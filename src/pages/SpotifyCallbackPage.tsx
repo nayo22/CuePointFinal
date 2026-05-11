@@ -15,15 +15,15 @@ export function SpotifyCallbackPage() {
   if (err) {
     const friendly =
       err === 'access_denied'
-        ? 'No autorizaste la conexión. Puedes intentarlo de nuevo cuando quieras.'
-        : 'No se pudo completar la conexión. Vuelve a intentarlo desde Perfil.'
+        ? 'You did not authorize the connection. You can try again whenever you like.'
+        : 'The connection could not be completed. Try again from Profile.'
     return (
       <AuthScreenFrame>
         <p className="sub" role="alert">
           {friendly}
         </p>
         <p className="muted-link-block">
-          <Link to="/login">Volver al inicio de sesión</Link>
+          <Link to="/login">Back to sign in</Link>
         </p>
       </AuthScreenFrame>
     )
@@ -32,9 +32,9 @@ export function SpotifyCallbackPage() {
   if (!code) {
     return (
       <AuthScreenFrame>
-        <p className="sub">Falta el código de autorización.</p>
+        <p className="sub">Authorization code is missing.</p>
         <p className="muted-link-block">
-          <Link to="/login">Volver al inicio de sesión</Link>
+          <Link to="/login">Back to sign in</Link>
         </p>
       </AuthScreenFrame>
     )
@@ -46,7 +46,7 @@ export function SpotifyCallbackPage() {
 function SpotifyCallbackInner({ code }: { code: string }) {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const [message, setMessage] = useState('Conectando con Spotify…')
+  const [message, setMessage] = useState('Connecting to Spotify…')
 
   useEffect(() => {
     let cancelled = false
@@ -68,7 +68,7 @@ function SpotifyCallbackInner({ code }: { code: string }) {
           setMessage(
             e instanceof Error
               ? e.message
-              : 'No se pudo conectar. Intenta de nuevo desde Perfil.',
+              : 'Could not connect. Try again from Profile.',
           )
         }
       })
@@ -81,7 +81,7 @@ function SpotifyCallbackInner({ code }: { code: string }) {
     <AuthScreenFrame>
       <p className="sub">{message}</p>
       <p className="muted-link-block">
-        <Link to="/login">Volver al inicio de sesión</Link>
+        <Link to="/login">Back to sign in</Link>
       </p>
     </AuthScreenFrame>
   )

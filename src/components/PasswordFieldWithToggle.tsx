@@ -37,7 +37,7 @@ export function PasswordFieldWithToggle({
           type="button"
           className="password-toggle-btn"
           onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+          aria-label={visible ? 'Hide password' : 'Show password'}
           aria-pressed={visible}
           aria-controls={id}
         >

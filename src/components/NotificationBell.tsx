@@ -1,21 +1,10 @@
-import { useEffect, useId, useState } from 'react'
-import { fetchNotifications } from '../services/backend'
-import type { NotificationItem } from '../types/models'
+import { useId, useState } from 'react'
+import { useAppSelector } from '../store/hooks'
 
 export function NotificationBell() {
   const panelId = useId()
   const [open, setOpen] = useState(false)
-  const [items, setItems] = useState<NotificationItem[]>([])
-
-  useEffect(() => {
-    let cancelled = false
-    fetchNotifications().then((list) => {
-      if (!cancelled) setItems(list)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const items = useAppSelector((s) => s.inbox.notifications)
 
   const unread = items.filter((n) => !n.read).length
 

@@ -7,7 +7,7 @@ function AuthBootScreen() {
   return (
     <AuthScreenFrame>
       <p className="sub" role="status">
-        Cargando sesión…
+        Loading session…
       </p>
     </AuthScreenFrame>
   )

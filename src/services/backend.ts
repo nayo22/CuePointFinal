@@ -24,7 +24,14 @@ export async function fetchNotifications(): Promise<NotificationItem[]> {
 
 export async function fetchActivityFeed(): Promise<ActivityItem[]> {
   await wait(90)
-  return activityFeedSeed
+  const clock = new Date().toLocaleTimeString()
+  const liveRow: ActivityItem = {
+    id: 'activity-live-pulse',
+    kind: 'comment',
+    text: `Auto refresh (${clock}). Other rows are sample data.`,
+    time: clock,
+  }
+  return [liveRow, ...activityFeedSeed]
 }
 
 export async function searchDiscoveryTracks(query: string): Promise<Track[]> {

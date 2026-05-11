@@ -3,7 +3,6 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 export type DjRole = 'editor' | 'spectator'
 
 type AuthState = {
-  /** True after first auth resolution (or immediately if backend is off). */
   authReady: boolean
   role: DjRole
   uid: string | null

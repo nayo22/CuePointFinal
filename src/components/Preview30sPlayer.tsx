@@ -34,7 +34,7 @@ export function Preview30sPlayer({ trackTitle, previewUrl }: Props) {
         </button>
         <div className="preview-body">
           <div className="preview-wave" aria-hidden />
-          <p className="mono preview-time">Vista previa (~30 s)</p>
+          <p className="mono preview-time">Preview (~30 s)</p>
         </div>
       </div>
     )
@@ -50,7 +50,7 @@ export function Preview30sPlayer({ trackTitle, previewUrl }: Props) {
         <div className="preview-progress">
           <span className="preview-progress-fill" />
         </div>
-        <span className="mono preview-time">Sin vista previa para este tema</span>
+        <span className="mono preview-time">No preview for this track</span>
       </div>
     </div>
   )

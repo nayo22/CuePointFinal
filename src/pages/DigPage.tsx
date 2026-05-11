@@ -6,7 +6,10 @@ import { addToCrate } from '../features/crate/crateSlice'
 import { isHarmonicMatch } from '../lib/harmonicMatch'
 import { coverUrl } from '../lib/coverUrl'
 import { isSpotifyConfigured } from '../lib/spotifyConfig'
-import { readSpotifyTokens } from '../lib/spotifyTokens'
+import {
+  getEffectiveFirebaseUidForSpotify,
+  readSpotifyTokens,
+} from '../lib/spotifyTokens'
 import {
   DIG_SEARCH_FAILURE_MESSAGE,
   searchDigTracks,
@@ -20,8 +23,9 @@ export function DigPage() {
   const dispatch = useAppDispatch()
   const crateIds = useAppSelector((s) => s.crate.ids)
   const draftTracks = useAppSelector((s) => s.draft.tracks)
-  const isGuest =
-    useAppSelector((s) => s.auth.role === 'spectator' || s.auth.uid == null)
+  const { role, uid } = useAppSelector((s) => s.auth)
+  const effectiveUid = uid ?? getEffectiveFirebaseUidForSpotify()
+  const isGuest = role === 'spectator' || effectiveUid == null
 
   const [results, setResults] = useState<Track[]>([])
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -96,32 +100,11 @@ export function DigPage() {
       </div>
 
       <section className="panel panel-gap panel--accent-orange">
-        <h2>Search & filters</h2>
-        <div className="filter-bar">
-          <div className="field field--inline">
-            <label htmlFor="dig-key">Key</label>
-            <select id="dig-key" defaultValue="">
-              <option value="">Any</option>
-              <option value="8A">8A</option>
-              <option value="9A">9A</option>
-              <option value="10A">10A</option>
-            </select>
-          </div>
-          <div className="field field--inline">
-            <label htmlFor="dig-bpm-min">BPM min</label>
-            <input id="dig-bpm-min" type="number" defaultValue={120} />
-          </div>
-          <div className="field field--inline">
-            <label htmlFor="dig-bpm-max">BPM max</label>
-            <input id="dig-bpm-max" type="number" defaultValue={135} />
-          </div>
-          <label className="check faux-check">
-            <input type="checkbox" defaultChecked readOnly /> Harmonic filter
-          </label>
-          <label className="check faux-check">
-            <input type="checkbox" defaultChecked readOnly /> Thumbnail art
-          </label>
-        </div>
+        <h2>Search</h2>
+        <p className="api-card-desc">
+          Use the bar at the top and type an artist or track. With Spotify connected
+          on Profile you get the real catalog; otherwise you see local suggestions.
+        </p>
         {q ? (
           <p className="search-query-line mono">Query: “{q}”</p>
         ) : (
@@ -134,18 +117,18 @@ export function DigPage() {
         ) : null}
         {!spotifyLive && isSpotifyConfigured() ? (
           <p className="mono search-query-line">
-            Conecta Spotify en Perfil para buscar en el catálogo completo.
+            Connect Spotify on Profile to search the full catalog.
           </p>
         ) : null}
         {!isSpotifyConfigured() && q.trim() && !searching && !searchError ? (
           <p className="search-query-line" role="status">
-            La búsqueda ampliada no está disponible ahora; sigues viendo
-            sugerencias de la app.
+            Extended search is not configured; you are still seeing in-app
+            suggestions.
           </p>
         ) : null}
         {searching && q.trim() ? (
           <p className="mono search-query-line" role="status">
-            Buscando…
+            Searching…
           </p>
         ) : null}
         {spotifyLive &&
@@ -154,7 +137,7 @@ export function DigPage() {
         !searchError &&
         results.length === 0 ? (
           <p className="mono search-query-line" role="status">
-            No encontramos canciones para esa búsqueda. Prueba otras palabras.
+            No tracks matched that search. Try different words.
           </p>
         ) : null}
       </section>
@@ -200,7 +183,7 @@ export function DigPage() {
                 acousticness={t.acousticness}
               />
               <p className="track-meta-line mono">
-                Sello · {t.label} ({t.year})
+                Label · {t.label} ({t.year})
               </p>
               <Preview30sPlayer
                 trackTitle={t.title}
@@ -223,7 +206,7 @@ export function DigPage() {
                     if (t.spotifyOpenUrl) window.open(t.spotifyOpenUrl, '_blank')
                   }}
                 >
-                  Abrir en Spotify
+                  Open in Spotify
                 </button>
               </div>
             </article>

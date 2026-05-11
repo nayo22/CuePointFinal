@@ -7,11 +7,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { useEffect, useState } from 'react'
-import {
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthScreenFrame } from '../components/AuthScreenFrame'
 import { PasswordFieldWithToggle } from '../components/PasswordFieldWithToggle'
 import { setEditor, setSpectator } from '../features/auth/authSlice'
@@ -29,15 +25,15 @@ type Mode = 'login' | 'register'
 
 function authMessage(code: string): string {
   if (code === 'auth/invalid-credential' || code === 'auth/wrong-password')
-    return 'Correo o contraseña incorrectos.'
+    return 'Incorrect email or password.'
   if (code === 'auth/email-already-in-use')
-    return 'Ese correo ya está registrado.'
-  if (code === 'auth/invalid-email') return 'Ese correo no es válido.'
+    return 'That email is already registered.'
+  if (code === 'auth/invalid-email') return 'That email address is not valid.'
   if (code === 'auth/weak-password')
-    return 'Usa una contraseña más segura (6+ caracteres).'
+    return 'Use a stronger password (at least 6 characters).'
   if (code === 'auth/too-many-requests')
-    return 'Demasiados intentos. Prueba más tarde.'
-  return 'Algo salió mal. Inténtalo de nuevo.'
+    return 'Too many attempts. Try again later.'
+  return 'Something went wrong. Please try again.'
 }
 
 type LocationState = {
@@ -97,23 +93,23 @@ export function LoginPage() {
 
     if (mode === 'login') {
       if (!trimmedEmail || !password) {
-        setError('Correo y contraseña son obligatorios.')
+        setError('Email and password are required.')
         return
       }
     } else {
       if (!trimmedEmail || !trimmedUser || !password || !confirmPassword) {
-        setError('Completa correo, usuario, contraseña y confirmación.')
+        setError('Fill in email, display name, password, and confirmation.')
         return
       }
       if (password !== confirmPassword) {
-        setError('Las contraseñas no coinciden.')
+        setError('Passwords do not match.')
         return
       }
     }
 
     if (!backendOk) {
       setError(
-        'El servicio de cuentas no está disponible en este momento. Vuelve más tarde.',
+        'Accounts are not available right now. Please try again later.',
       )
       return
     }
@@ -165,139 +161,138 @@ export function LoginPage() {
 
   return (
     <AuthScreenFrame>
-          <p className="sub">
-            Arma tus sets con criterio: energía, armonía y un crate inteligente.
-            Busca música, explora y comparte con otros DJs.
-          </p>
+      <p className="sub">
+        Build sets with energy, harmony, and a smart crate. Search music, explore
+        the community, and share with other DJs.
+      </p>
 
-          {spotifyJustConnected ? (
-            <p className="login-env-hint" role="status">
-              Cuenta de música vinculada. Entra con tu correo y contraseña para
-              continuar.
-            </p>
-          ) : null}
+      {spotifyJustConnected ? (
+        <p className="login-env-hint" role="status">
+          Music account linked. Sign in with your email and password to continue.
+        </p>
+      ) : null}
 
-          <div className="login-mode-tabs" role="tablist" aria-label="Modo de cuenta">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'login'}
-              className={`login-mode-tab ${mode === 'login' ? 'login-mode-tab--active' : ''}`}
-              onClick={() => {
-                setMode('login')
-                setConfirmPassword('')
-                setSearchParams(
-                  (prev) => {
-                    const next = new URLSearchParams(prev)
-                    next.delete('mode')
-                    return next
-                  },
-                  { replace: true },
-                )
-              }}
-            >
-              Iniciar sesión
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'register'}
-              className={`login-mode-tab ${mode === 'register' ? 'login-mode-tab--active' : ''}`}
-              onClick={() => {
-                setMode('register')
-                setSearchParams(
-                  (prev) => {
-                    const next = new URLSearchParams(prev)
-                    next.set('mode', 'register')
-                    return next
-                  },
-                  { replace: true },
-                )
-              }}
-            >
-              Registrarse
-            </button>
-          </div>
+      <div className="login-mode-tabs" role="tablist" aria-label="Account mode">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'login'}
+          className={`login-mode-tab ${mode === 'login' ? 'login-mode-tab--active' : ''}`}
+          onClick={() => {
+            setMode('login')
+            setConfirmPassword('')
+            setSearchParams(
+              (prev) => {
+                const next = new URLSearchParams(prev)
+                next.delete('mode')
+                return next
+              },
+              { replace: true },
+            )
+          }}
+        >
+          Sign in
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'register'}
+          className={`login-mode-tab ${mode === 'register' ? 'login-mode-tab--active' : ''}`}
+          onClick={() => {
+            setMode('register')
+            setSearchParams(
+              (prev) => {
+                const next = new URLSearchParams(prev)
+                next.set('mode', 'register')
+                return next
+              },
+              { replace: true },
+            )
+          }}
+        >
+          Register
+        </button>
+      </div>
 
-          <div className="field">
-            <label htmlFor="email">Correo</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+      <div className="field">
+        <label htmlFor="email">Email</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+      </div>
 
-          {mode === 'register' ? (
-            <div className="field">
-              <label htmlFor="dj-display-name">Nombre de usuario</label>
-              <input
-                id="dj-display-name"
-                name="djName"
-                type="text"
-                autoComplete="username"
-                placeholder="Tu nombre en la app"
-                value={djName}
-                onChange={(e) => setDjName(e.target.value)}
-              />
-            </div>
-          ) : null}
-
-          <PasswordFieldWithToggle
-            key={`${mode}-password`}
-            id="password"
-            name="password"
-            label="Contraseña"
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            value={password}
-            onChange={setPassword}
+      {mode === 'register' ? (
+        <div className="field">
+          <label htmlFor="dj-display-name">Display name</label>
+          <input
+            id="dj-display-name"
+            name="djName"
+            type="text"
+            autoComplete="username"
+            placeholder="Your name in the app"
+            value={djName}
+            onChange={(e) => setDjName(e.target.value)}
           />
+        </div>
+      ) : null}
 
-          {mode === 'register' ? (
-            <PasswordFieldWithToggle
-              key="register-confirm"
-              id="password-confirm"
-              name="password-confirm"
-              label="Confirmar contraseña"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={setConfirmPassword}
-            />
-          ) : null}
+      <PasswordFieldWithToggle
+        key={`${mode}-password`}
+        id="password"
+        name="password"
+        label="Password"
+        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+        value={password}
+        onChange={setPassword}
+      />
 
-          {error ? (
-            <p className="login-error" role="alert">
-              {error}
-            </p>
-          ) : null}
+      {mode === 'register' ? (
+        <PasswordFieldWithToggle
+          key="register-confirm"
+          id="password-confirm"
+          name="password-confirm"
+          label="Confirm password"
+          autoComplete="new-password"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+        />
+      ) : null}
 
-          <div className="login-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={busy}
-              onClick={() => void submitEmail()}
-            >
-              {busy
-                ? 'Espera…'
-                : mode === 'login'
-                  ? 'Iniciar sesión'
-                  : 'Crear cuenta'}
-            </button>
-          </div>
+      {error ? (
+        <p className="login-error" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-          <div className="login-actions login-actions--spectator">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => void goSpectator()}
-            >
-              Continuar como invitado
-            </button>
-          </div>
+      <div className="login-actions">
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={busy}
+          onClick={() => void submitEmail()}
+        >
+          {busy
+            ? 'Please wait…'
+            : mode === 'login'
+              ? 'Sign in'
+              : 'Create account'}
+        </button>
+      </div>
+
+      <div className="login-actions login-actions--spectator">
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => void goSpectator()}
+        >
+          Continue as guest
+        </button>
+      </div>
     </AuthScreenFrame>
   )
 }

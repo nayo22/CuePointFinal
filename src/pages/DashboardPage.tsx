@@ -1,37 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { EnergyStrip } from '../components/EnergyStrip'
-import {
-  buildDraftSetlist,
-  communitySets,
-} from '../data/seed'
+import { buildDraftSetlist, communitySets } from '../data/seed'
 import { isHarmonicMatch } from '../lib/harmonicMatch'
-import { fetchActivityFeed, fetchNotifications } from '../services/backend'
 import { useAppSelector } from '../store/hooks'
-import type { ActivityItem, NotificationItem } from '../types/models'
 
 export function DashboardPage() {
   const draftTracks = useAppSelector((s) => s.draft.tracks)
+  const notifications = useAppSelector((s) => s.inbox.notifications)
+  const activity = useAppSelector((s) => s.inbox.activity)
   const myDraft = buildDraftSetlist(draftTracks)
   const levels = myDraft.tracks.map((t) => t.energy)
   const ranked = [...communitySets].sort((a, b) => b.score - a.score)
   const crateCount = useAppSelector((s) => s.crate.ids.length)
-
-  const [notifications, setNotifications] = useState<NotificationItem[]>([])
-  const [activity, setActivity] = useState<ActivityItem[]>([])
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([fetchNotifications(), fetchActivityFeed()]).then(([n, a]) => {
-      if (!cancelled) {
-        setNotifications(n)
-        setActivity(a)
-      }
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   const anchor = useMemo(() => {
     const list = myDraft.tracks
@@ -51,8 +32,8 @@ export function DashboardPage() {
   return (
     <>
       <p className="mission-tagline">
-        Arma sets con criterio: energía, armonía y un crate que te acompaña.
-        Explora lo que hace la comunidad y mejora cada sesión.
+        Build sets with energy, harmony, and a crate that travels with you. Explore
+        what the community is doing and level up every session.
       </p>
 
       <div className="chip-row page-chips-bar" aria-label="Quick stats">
@@ -77,7 +58,7 @@ export function DashboardPage() {
         </section>
 
         <section className="panel panel--accent-orange" aria-labelledby="dash-notif">
-          <h2 id="dash-notif">Bandeja</h2>
+          <h2 id="dash-notif">Inbox</h2>
           <p className="mono dash-mini-hint">Crate saves and comments</p>
           <ul className="dash-notif-list">
             {notifications.map((n) => (
@@ -134,10 +115,10 @@ export function DashboardPage() {
         </section>
 
         <section className="panel panel--accent-green">
-          <h2>Mezcla armónica</h2>
+          <h2>Harmonic mixing</h2>
           <p className="api-card-desc">
-            El ancla es el último tema de tu borrador. En Explorar verás qué
-            filas encajan en tonalidad y ritmo.
+            The anchor is the last track in your draft. On Explore you can see which
+            rows line up in key and tempo.
           </p>
           <p className="anchor-line dash-anchor">
             Anchor: {anchor?.artist} — {anchor?.key} @ {anchor?.bpm} BPM
@@ -149,10 +130,10 @@ export function DashboardPage() {
       </div>
 
       <section className="panel panel-spaced">
-        <h2>Tu música</h2>
+        <h2>Your music</h2>
         <p className="api-card-desc">
-          Desde Perfil puedes vincular tu cuenta de streaming para buscar temas y
-          ver más detalle al armar sets.
+          From Profile you can link your streaming account to search tracks and see
+          more detail while you build sets.
         </p>
         <div className="chip-row">
           <span className="chip chip--orange">Spotify</span>

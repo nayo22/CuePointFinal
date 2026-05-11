@@ -6,7 +6,7 @@ type Props = {
 
 export function TechnicalThread({ threads }: Props) {
   if (threads.length === 0) {
-    return <p className="empty-hint">Aún no hay comentarios en este hilo.</p>
+    return <p className="empty-hint">No comments in this thread yet.</p>
   }
   return (
     <ul className="thread-list">
